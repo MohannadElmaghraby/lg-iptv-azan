@@ -23,7 +23,7 @@ export default function KidsGamePlayer({
   const [playerId, setPlayerId] = useState('both');
   const [roundIdx, setRoundIdx] = useState(0);
   const [stars, setStars] = useState(0);
-  const [feedback, setFeedback] = useState(null); // null | { ok: true/false, text: string }
+  const [feedback, setFeedback] = useState(null);
   const [lockedInput, setLockedInput] = useState(false);
   const audioRef = useRef(null);
   const nextTimerRef = useRef(null);
@@ -65,7 +65,7 @@ export default function KidsGamePlayer({
     }
   };
 
-  // Play question audio on round change
+  // Play question voice automatically on each round
   useEffect(function () {
     setFeedback(null);
     setLockedInput(false);
@@ -112,13 +112,13 @@ export default function KidsGamePlayer({
       setFeedback({
         ok: true,
         text: isFiveMilestone
-          ? '🏆 Woohoo! ' + nextStars + ' Golden Stars! Superstars!'
-          : '🌟 Great Job! ' + choice.label + '!',
+          ? '🏆 Woohoo! ' + nextStars + ' Golden Stars!'
+          : '🌟 Great Job!',
       });
 
       const praiseClip = isFiveMilestone
         ? './audio/kids/game_win5.mp3'
-        : round.praiseAudio || PRAISE_CLIPS[roundIdx % PRAISE_CLIPS.length];
+        : choice.okAudio || round.praiseAudio || PRAISE_CLIPS[roundIdx % PRAISE_CLIPS.length];
 
       playClip(praiseClip);
 
@@ -128,9 +128,9 @@ export default function KidsGamePlayer({
     } else {
       setFeedback({
         ok: false,
-        text: '💛 Good try! Count or listen again together!',
+        text: '💛 Let’s try again!',
       });
-      playClip('./audio/kids/game_oops.mp3');
+      playClip(choice.tryAudio || './audio/kids/game_oops.mp3');
     }
   };
 
@@ -234,7 +234,7 @@ export default function KidsGamePlayer({
                 key={n}
                 className="kids-pop-item"
                 style={{
-                  fontSize: count > 5 ? 82 : 108,
+                  fontSize: count > 5 ? 78 : 108,
                   margin: '0 12px',
                   lineHeight: 1.15,
                 }}
@@ -256,10 +256,11 @@ export default function KidsGamePlayer({
           <button
             type="button"
             data-focusable="true"
-            className="tv-btn small"
+            className="tv-btn primary"
+            style={{ marginBottom: 0 }}
             onClick={function () { if (round.audio) playClip(round.audio); }}
           >
-            🔊 Hear Question Again
+            🔊 Hear Question
           </button>
         </div>
 
@@ -281,7 +282,7 @@ export default function KidsGamePlayer({
         )}
       </div>
 
-      {/* 3 Big Juicy Toddler Choice Tiles */}
+      {/* 3 Big Visual Voice-First Choice Tiles */}
       <div style={{ display: 'flex', justifyContent: 'center', alignItems: 'stretch' }}>
         {round.choices.map(function (ch) {
           return (
@@ -290,15 +291,33 @@ export default function KidsGamePlayer({
               type="button"
               data-focusable="true"
               className="kids-choice-btn"
+              aria-label={ch.id}
               onClick={function () { handleChoiceClick(ch); }}
             >
-              {ch.icon && <div style={{ fontSize: 54, marginBottom: 6 }}>{ch.icon}</div>}
-              <div style={{ fontSize: ch.icon ? 34 : 58, fontWeight: 900, color: '#f5f7fa' }} dir="auto">
-                {ch.label}
-              </div>
-              {ch.sub && (
-                <div style={{ fontSize: 20, color: '#98a2b3', fontWeight: 700, marginTop: 4 }} dir="auto">
-                  {ch.sub}
+              {ch.colorHex ? (
+                <div
+                  style={{
+                    width: 112,
+                    height: 112,
+                    borderRadius: '50%',
+                    backgroundColor: ch.colorHex,
+                    border: '4px solid rgba(255, 255, 255, 0.75)',
+                    boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
+                  }}
+                />
+              ) : game.hideChoiceText && ch.icon ? (
+                <div style={{ fontSize: 96, lineHeight: 1.05 }}>{ch.icon}</div>
+              ) : (
+                <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
+                  {ch.icon && <div style={{ fontSize: 54, marginBottom: 6 }}>{ch.icon}</div>}
+                  <div style={{ fontSize: ch.icon ? 34 : 68, fontWeight: 900, color: '#f5f7fa' }} dir="auto">
+                    {ch.label}
+                  </div>
+                  {ch.sub && (
+                    <div style={{ fontSize: 20, color: '#98a2b3', fontWeight: 700, marginTop: 4 }} dir="auto">
+                      {ch.sub}
+                    </div>
+                  )}
                 </div>
               )}
             </button>
