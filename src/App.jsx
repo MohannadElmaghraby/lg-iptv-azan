@@ -10,6 +10,7 @@ import PrayerAzanView from './components/PrayerAzanView.jsx';
 import SettingsView from './components/SettingsView.jsx';
 import VideoPlayer from './components/VideoPlayer.jsx';
 import KidsLearningPlayer from './components/KidsLearningPlayer.jsx';
+import KidsGamePlayer from './components/KidsGamePlayer.jsx';
 import AzanOverlay from './components/AzanOverlay.jsx';
 import KidsLockOverlay from './components/KidsLockOverlay.jsx';
 import { ResumePromptModal, SeriesModal } from './components/SeriesModal.jsx';
@@ -73,6 +74,7 @@ export default function App() {
   const [playingItem, setPlayingItem] = useState(null);
   const [playingStartSec, setPlayingStartSec] = useState(0);
   const [activeLesson, setActiveLesson] = useState(null);
+  const [activeGame, setActiveGame] = useState(null);
   const [resumePromptEntry, setResumePromptEntry] = useState(null);
   const [seriesModalItem, setSeriesModalItem] = useState(null);
 
@@ -366,6 +368,7 @@ export default function App() {
         '[data-modal-scope="series-modal"]',
         '[data-modal-scope="player"]',
         '[data-modal-scope="kids-player"]',
+        '[data-modal-scope="kids-game"]',
       ];
       for (let i = 0; i < selectors.length; i += 1) {
         const el = document.querySelector(selectors[i]);
@@ -400,7 +403,7 @@ export default function App() {
           setSeriesModalItem(null);
           return;
         }
-        if (!playingItem && !activeLesson && activeTab !== 'home') {
+        if (!playingItem && !activeLesson && !activeGame && activeTab !== 'home') {
           e.preventDefault();
           setActiveTab('home');
           return;
@@ -445,7 +448,7 @@ export default function App() {
 
     window.addEventListener('keydown', onKeyDown);
     return function () { window.removeEventListener('keydown', onKeyDown); };
-  }, [activeAzanPrayer, kidsLocked, resumePromptEntry, seriesModalItem, playingItem, activeLesson, activeTab, dismissAzan]);
+  }, [activeAzanPrayer, kidsLocked, resumePromptEntry, seriesModalItem, playingItem, activeLesson, activeGame, activeTab, dismissAzan]);
 
   // Focus first element inside newly opened overlays
   useEffect(function () {
@@ -584,6 +587,9 @@ export default function App() {
               onStartLesson={function (lesson) {
                 setActiveLesson(lesson);
               }}
+              onStartGame={function (game) {
+                setActiveGame(game);
+              }}
               onLoadKidsM3u={function (url) {
                 handleLoadM3uUrl(url).then(function () {
                   setActiveTab('live');
@@ -656,6 +662,18 @@ export default function App() {
         />
       )}
 
+      {/* Fullscreen Preschool Interactive Game */}
+      {activeGame && (
+        <KidsGamePlayer
+          game={activeGame}
+          externalPauseReason={externalPauseReason}
+          onTriggerTestAzan={function () {
+            triggerAzan(nextPrayerInfo && nextPrayerInfo.prayer);
+          }}
+          onClose={function () { setActiveGame(null); }}
+        />
+      )}
+
       {/* Continue Watching Resume / Start Over Prompt */}
       <ResumePromptModal
         entry={resumePromptEntry}
@@ -693,7 +711,7 @@ export default function App() {
       {/* Fullscreen Arabic Azan Overlay */}
       <AzanOverlay
         activePrayer={activeAzanPrayer}
-        wasVideoPaused={Boolean(playingItem || activeLesson)}
+        wasVideoPaused={Boolean(playingItem || activeLesson || activeGame)}
         onDismiss={dismissAzan}
       />
     </div>

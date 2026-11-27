@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { KIDS_LEARNING_LESSONS, KIDS_PLAYLIST_PRESETS } from '../data/kidsLessons.js';
+import { KIDS_GAMES } from '../data/kidsGames.js';
 import { formatPlaybackTime } from '../utils/watchProgress.js';
 import { speakAsserAndEyadGreeting } from '../utils/kidsGreeting.js';
 import { readStorage, writeStorage } from '../utils/storage.js';
@@ -21,6 +22,7 @@ export default function KidsTimerView({
   onStopTimer,
   onChangePin,
   onStartLesson,
+  onStartGame,
   onLoadKidsM3u,
   loadingM3u,
 }) {
@@ -169,6 +171,52 @@ export default function KidsTimerView({
             <span style={{ marginLeft: 14, color: '#6ee7b7', fontSize: 15, fontWeight: 700 }}>{pinMsg}</span>
           )}
         </div>
+      </div>
+
+      {/* Interactive Preschool Games for Asser & Eyad */}
+      <div className="section-header">
+        <div>
+          <h3 className="section-title">🎮 Interactive Preschool Games — Asser &amp; Eyad</h3>
+          <div className="section-subtitle">
+            Point with your LG Magic Remote or press Left/Right + OK to count numbers, match animals, and learn &ldquo;What Do We Say?&rdquo;
+          </div>
+        </div>
+      </div>
+
+      <div className="cards-grid" style={{ marginBottom: 24 }}>
+        {KIDS_GAMES.map(function (g) {
+          return (
+            <div className="media-card-wrap" key={g.id} style={{ width: 360 }}>
+              <button
+                type="button"
+                data-focusable="true"
+                className="media-card"
+                onClick={function () { if (onStartGame) onStartGame(g); }}
+              >
+                <div
+                  className="media-thumb"
+                  style={{
+                    height: 126,
+                    backgroundColor: '#090e18',
+                    borderBottom: '2px solid ' + g.accent,
+                  }}
+                >
+                  <span style={{ fontSize: 56 }}>{g.icon}</span>
+                  <span className="media-type-badge" style={{ color: g.accent, borderColor: g.accent }}>
+                    {g.badge}
+                  </span>
+                </div>
+                <div className="media-card-body">
+                  <div className="media-title">{g.title}</div>
+                  <div className="media-group" dir="rtl" style={{ color: '#f0c94d', marginBottom: 4 }}>
+                    {g.arTitle}
+                  </div>
+                  <div className="media-group">{g.rounds.length} interactive rounds • Tap to play</div>
+                </div>
+              </button>
+            </div>
+          );
+        })}
       </div>
 
       {/* Built-in Ages 3-4 English Learning Videos */}
