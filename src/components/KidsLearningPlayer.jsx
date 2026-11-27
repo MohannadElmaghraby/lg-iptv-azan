@@ -1,7 +1,6 @@
-import React, { useState, useEffect, useRef } from 'react';
+import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { WEBOS_KEYS } from '../utils/spatialNav.js';
-import { formatPlaybackTime } from '../utils/watchProgress.js';
-import { playKidsLessonSlideAudio, stopKidsVoice } from '../utils/kidsGreeting.js';
+import { stopKidsVoice } from '../utils/kidsGreeting.js';
 import KidsIllustration, { mapVisualToKind } from './KidsIllustration.jsx';
 
 function renderShapeSvg(shape, colorHex) {
@@ -63,86 +62,181 @@ export default function KidsLearningPlayer({
 }) {
   const [slideIndex, setSlideIndex] = useState(0);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [elapsedSec, setElapsedSec] = useState(0);
-  const [revealedCount, setRevealedCount] = useState(1);
+  // activeCountIdx: 0..count-1 while counting one-by-one; count means finished counting all items
+  const [activeCountIdx, setActiveCountIdx] = useState(0);
+
   const wasPlayingRef = useRef(true);
   const prevPauseRef = useRef(null);
+  const audioRef = useRef(null);
+  const stepTimerRef = useRef(null);
 
   const slides = (lesson && lesson.slides) || [];
   const currentSlide = slides[slideIndex] || slides[0];
-  const secPerSlide = 5;
-  const totalSec = slides.length * secPerSlide;
+  const isStepCounting = Boolean(lesson && lesson.stepCount && currentSlide && (currentSlide.count || 1) >= 2);
 
+  const stopAllAudioAndTimers = useCallback(function () {
+    stopKidsVoice();
+    if (stepTimerRef.current) {
+      clearTimeout(stepTimerRef.current);
+      stepTimerRef.current = null;
+    }
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      } catch (e) { /* ignore */ }
+      audioRef.current = null;
+    }
+  }, []);
+
+  const playSoundFile = useCallback(function (src, onDone, fallbackMs) {
+    if (stepTimerRef.current) {
+      clearTimeout(stepTimerRef.current);
+      stepTimerRef.current = null;
+    }
+    if (audioRef.current) {
+      try {
+        audioRef.current.pause();
+        audioRef.current.currentTime = 0;
+      } catch (e) { /* ignore */ }
+      audioRef.current = null;
+    }
+
+    let called = false;
+    const finish = function () {
+      if (called) return;
+      called = true;
+      if (stepTimerRef.current) {
+        clearTimeout(stepTimerRef.current);
+        stepTimerRef.current = null;
+      }
+      if (onDone) onDone();
+    };
+
+    if (!src) {
+      stepTimerRef.current = setTimeout(finish, fallbackMs || 900);
+      return;
+    }
+
+    // Safety timeout in case audio events don't fire
+    stepTimerRef.current = setTimeout(finish, fallbackMs || 4500);
+
+    try {
+      const a = new Audio(src);
+      a.volume = 1.0;
+      audioRef.current = a;
+      a.addEventListener('ended', function () {
+        setTimeout(finish, 180);
+      });
+      a.addEventListener('error', function () {
+        setTimeout(finish, 750);
+      });
+      const p = a.play();
+      if (p && typeof p.catch === 'function') {
+        p.catch(function () {
+          setTimeout(finish, 750);
+        });
+      }
+    } catch (e) {
+      setTimeout(finish, 750);
+    }
+  }, []);
+
+  // Reset when lesson changes
   useEffect(function () {
     setSlideIndex(0);
-    setElapsedSec(0);
+    setActiveCountIdx(0);
     setIsPlaying(true);
     return function () {
-      stopKidsVoice();
+      stopAllAudioAndTimers();
     };
-  }, [lesson && lesson.id]);
+  }, [lesson && lesson.id, stopAllAudioAndTimers]);
 
-  // Play real human MP3 narration on slide change
+  // Reset active count index when slide changes
   useEffect(function () {
-    if (isPlaying && !externalPauseReason && currentSlide) {
-      playKidsLessonSlideAudio(currentSlide);
-    }
-  }, [slideIndex, isPlaying, externalPauseReason]);
+    setActiveCountIdx(0);
+  }, [slideIndex]);
 
-  // Animated one-by-one counting pop-in!
+  // Step-by-step synced counting & slide progression
   useEffect(function () {
-    if (!currentSlide) return undefined;
-    const target = currentSlide.count || 1;
-    if (target <= 1) {
-      setRevealedCount(1);
+    if (!currentSlide || !isPlaying || externalPauseReason) {
+      stopAllAudioAndTimers();
       return undefined;
     }
-    setRevealedCount(1);
-    const stepMs = Math.max(120, Math.min(340, Math.floor(2400 / target)));
-    let cur = 1;
-    const timer = setInterval(function () {
-      cur += 1;
-      if (cur >= target) {
-        setRevealedCount(target);
-        clearInterval(timer);
-      } else {
-        setRevealedCount(cur);
-      }
-    }, stepMs);
-    return function () { clearInterval(timer); };
-  }, [slideIndex, lesson && lesson.id]);
 
-  // Auto-advance lesson timer
-  useEffect(function () {
-    if (!isPlaying || externalPauseReason) return undefined;
-    const interval = setInterval(function () {
-      setElapsedSec(function (prev) {
-        const next = prev + 1;
-        if (next >= totalSec) {
-          setSlideIndex(0);
-          return 0;
+    let cancelled = false;
+    const count = currentSlide.count || 1;
+
+    if (isStepCounting && count >= 2) {
+      const runStep = function (idx) {
+        if (cancelled) return;
+        if (idx < count) {
+          setActiveCountIdx(idx);
+          const numAudio = idx + 1 <= 20 ? './audio/kids/cnt_' + (idx + 1) + '.mp3' : null;
+          playSoundFile(
+            numAudio,
+            function () {
+              if (!cancelled) runStep(idx + 1);
+            },
+            1400
+          );
+        } else {
+          // Highlight all items & speak final summary phrase ("Three! Three happy ducks!")
+          setActiveCountIdx(count);
+          playSoundFile(
+            currentSlide.audio,
+            function () {
+              if (!cancelled) {
+                stepTimerRef.current = setTimeout(function () {
+                  if (!cancelled) {
+                    setSlideIndex(function (s) { return (s + 1) % slides.length; });
+                  }
+                }, 1300);
+              }
+            },
+            4500
+          );
         }
-        const nextIdx = Math.floor(next / secPerSlide) % slides.length;
-        setSlideIndex(nextIdx);
-        return next;
-      });
-    }, 1000);
-    return function () { clearInterval(interval); };
-  }, [isPlaying, externalPauseReason, slides.length, totalSec]);
+      };
+
+      runStep(0);
+    } else {
+      // Non-counting slide or count === 1: play slide voice and advance calmly
+      setActiveCountIdx(0);
+      playSoundFile(
+        currentSlide.audio,
+        function () {
+          if (!cancelled) {
+            stepTimerRef.current = setTimeout(function () {
+              if (!cancelled) {
+                setSlideIndex(function (s) { return (s + 1) % slides.length; });
+              }
+            }, 1800);
+          }
+        },
+        4500
+      );
+    }
+
+    return function () {
+      cancelled = true;
+      stopAllAudioAndTimers();
+    };
+  }, [slideIndex, isPlaying, externalPauseReason, currentSlide, isStepCounting, slides.length, playSoundFile, stopAllAudioAndTimers]);
 
   // Pause & resume on Azan / Kids Lock
   useEffect(function () {
     if (externalPauseReason && !prevPauseRef.current) {
       wasPlayingRef.current = isPlaying;
       setIsPlaying(false);
-      stopKidsVoice();
+      stopAllAudioAndTimers();
     } else if (!externalPauseReason && prevPauseRef.current) {
       if (prevPauseRef.current === 'azan' && wasPlayingRef.current) {
         setIsPlaying(true);
       }
     }
     prevPauseRef.current = externalPauseReason;
-  }, [externalPauseReason, isPlaying]);
+  }, [externalPauseReason, isPlaying, stopAllAudioAndTimers]);
 
   useEffect(function () {
     const onKeyDown = function (e) {
@@ -150,6 +244,7 @@ export default function KidsLearningPlayer({
       const code = e.keyCode || e.which;
       if (code === WEBOS_KEYS.BACK || code === WEBOS_KEYS.ESCAPE || code === WEBOS_KEYS.STOP) {
         e.preventDefault();
+        stopAllAudioAndTimers();
         onClose();
       } else if (code === WEBOS_KEYS.MEDIA_PLAY_PAUSE || code === WEBOS_KEYS.SPACE || code === WEBOS_KEYS.PAUSE || code === WEBOS_KEYS.PLAY) {
         e.preventDefault();
@@ -158,29 +253,52 @@ export default function KidsLearningPlayer({
     };
     window.addEventListener('keydown', onKeyDown);
     return function () { window.removeEventListener('keydown', onKeyDown); };
-  }, [externalPauseReason, onClose]);
+  }, [externalPauseReason, onClose, stopAllAudioAndTimers]);
 
   if (!lesson || !currentSlide) return null;
 
   const jumpSlide = function (idx) {
+    stopAllAudioAndTimers();
     const safeIdx = (idx + slides.length) % slides.length;
+    setActiveCountIdx(0);
     setSlideIndex(safeIdx);
-    setElapsedSec(safeIdx * secPerSlide);
+  };
+
+  const handleCountAgain = function () {
+    stopAllAudioAndTimers();
+    setActiveCountIdx(0);
+    setIsPlaying(false);
+    setTimeout(function () {
+      setIsPlaying(true);
+    }, 30);
+  };
+
+  const handleTapTile = function (idx) {
+    if (externalPauseReason) return;
+    setIsPlaying(false);
+    setActiveCountIdx(idx);
+    const numAudio = idx + 1 <= 20 ? './audio/kids/cnt_' + (idx + 1) + '.mp3' : currentSlide.audio;
+    playSoundFile(numAudio, null, 2000);
   };
 
   const count = currentSlide.count || 1;
-  const shownCount = Math.min(count, revealedCount);
   const visualItems = [];
-  for (let i = 0; i < shownCount; i += 1) {
+  for (let i = 0; i < count; i += 1) {
     visualItems.push(i);
   }
   const accent = currentSlide.colorHex || lesson.accent || '#38bdf8';
+
+  const spotlightText = isStepCounting
+    ? activeCountIdx < count
+      ? String(activeCountIdx + 1)
+      : (currentSlide.bigBadge || String(count))
+    : currentSlide.bigBadge;
 
   return (
     <div
       className="fullscreen-overlay"
       data-modal-scope="kids-player"
-      style={{ backgroundColor: '#05080f', padding: '26px 42px', justifyContent: 'space-between' }}
+      style={{ backgroundColor: '#05080f', padding: '24px 42px', justifyContent: 'space-between' }}
     >
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
@@ -201,13 +319,18 @@ export default function KidsLearningPlayer({
               🕌 Test Azan Pause
             </button>
           )}
-          <button type="button" data-focusable="true" className="tv-btn small danger" onClick={onClose}>
+          <button
+            type="button"
+            data-focusable="true"
+            className="tv-btn small danger"
+            onClick={function () { stopAllAudioAndTimers(); onClose(); }}
+          >
             ✕ Back to Kids
           </button>
         </div>
       </div>
 
-      {/* Animated Cartoon Learning Stage */}
+      {/* Animated Synced Counting Stage */}
       <div
         key={lesson.id + '_' + slideIndex}
         className="kids-stage-card"
@@ -222,22 +345,25 @@ export default function KidsLearningPlayer({
           borderRadius: 28,
           background: 'radial-gradient(circle at center, rgba(20, 32, 54, 0.95) 0%, rgba(8, 12, 22, 0.99) 75%)',
           border: '3px solid ' + accent,
-          padding: '28px 36px',
+          padding: '24px 36px',
           position: 'relative',
           overflow: 'hidden',
         }}
       >
-        {currentSlide.bigBadge && (
+        {spotlightText && (
           <div
+            key={spotlightText}
             className="kids-big-badge"
             style={{
-              backgroundColor: 'rgba(255, 255, 255, 0.06)',
-              borderColor: accent,
-              color: accent,
+              backgroundColor: 'rgba(240, 201, 77, 0.14)',
+              borderColor: '#f0c94d',
+              color: '#f7dc7a',
+              fontSize: 48,
+              minWidth: 110,
             }}
             dir="auto"
           >
-            {currentSlide.bigBadge}
+            {spotlightText}
           </div>
         )}
 
@@ -247,8 +373,8 @@ export default function KidsLearningPlayer({
             flexWrap: 'wrap',
             justifyContent: 'center',
             alignItems: 'center',
-            maxWidth: 1280,
-            marginBottom: 18,
+            maxWidth: 1380,
+            marginBottom: 16,
           }}
         >
           {currentSlide.shape ? (
@@ -257,37 +383,36 @@ export default function KidsLearningPlayer({
             visualItems.map(function (n) {
               const isMany = count > 10;
               const isMed = count > 5;
+              const imgSize = isMany ? 62 : isMed ? 82 : 108;
+
+              let tileClass = 'kids-count-tile';
+              if (isStepCounting) {
+                if (n === activeCountIdx) tileClass += ' active';
+                else if (n < activeCountIdx) tileClass += ' counted';
+                else tileClass += ' waiting';
+              } else {
+                tileClass += ' counted';
+              }
+
               return (
-                <div
+                <button
                   key={n}
-                  className="kids-pop-item"
-                  style={{
-                    display: 'inline-flex',
-                    flexDirection: 'column',
-                    alignItems: 'center',
-                    margin: isMany ? '6px 10px' : '8px 14px',
-                  }}
+                  type="button"
+                  data-focusable="true"
+                  className={tileClass}
+                  onClick={function () { handleTapTile(n); }}
+                  aria-label={'Count item ' + (n + 1)}
                 >
                   <KidsIllustration
                     kind={mapVisualToKind(currentSlide.visual)}
-                    size={isMany ? 68 : isMed ? 86 : 116}
+                    size={imgSize}
                   />
                   {count > 1 && (
-                    <span
-                      style={{
-                        marginTop: 4,
-                        padding: '2px 10px',
-                        borderRadius: 999,
-                        fontSize: 16,
-                        fontWeight: 800,
-                        backgroundColor: 'rgba(255, 255, 255, 0.1)',
-                        color: accent,
-                      }}
-                    >
+                    <span className="kids-count-num">
                       {n + 1}
                     </span>
                   )}
-                </div>
+                </button>
               );
             })
           )}
@@ -295,16 +420,16 @@ export default function KidsLearningPlayer({
 
         <div
           style={{
-            fontSize: 60,
+            fontSize: 54,
             fontWeight: 800,
             color: accent,
-            marginBottom: 8,
+            marginBottom: 6,
           }}
           dir="auto"
         >
           {currentSlide.word}
         </div>
-        <div style={{ fontSize: 30, color: '#e2e8f0', fontWeight: 700 }} dir="auto">
+        <div style={{ fontSize: 28, color: '#e2e8f0', fontWeight: 700 }} dir="auto">
           {currentSlide.subtitle}
         </div>
       </div>
@@ -312,16 +437,14 @@ export default function KidsLearningPlayer({
       {/* Lesson Controls */}
       <div>
         <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, color: '#98a2b3', marginBottom: 6 }}>
-          <span>
-            Slide {slideIndex + 1} / {slides.length} ({formatPlaybackTime(elapsedSec)})
-          </span>
-          <span>{formatPlaybackTime(totalSec)}</span>
+          <span>Slide {slideIndex + 1} / {slides.length} {isStepCounting ? '• Tap any picture to hear its number!' : ''}</span>
+          <span>{Math.round(((slideIndex + 1) / Math.max(1, slides.length)) * 100)}%</span>
         </div>
         <div className="progress-track" style={{ height: 8, marginBottom: 14 }}>
           <div
             className="progress-fill"
             style={{
-              width: Math.min(100, (elapsedSec / Math.max(1, totalSec)) * 100) + '%',
+              width: Math.min(100, ((slideIndex + 1) / Math.max(1, slides.length)) * 100) + '%',
               backgroundColor: accent,
             }}
           />
@@ -342,17 +465,15 @@ export default function KidsLearningPlayer({
             className="tv-btn primary"
             onClick={function () { setIsPlaying(!isPlaying); }}
           >
-            {isPlaying ? '⏸ Pause Lesson' : '▶ Play Lesson'}
+            {isPlaying ? '⏸ Pause' : '▶ Play'}
           </button>
           <button
             type="button"
             data-focusable="true"
-            className="tv-btn"
-            onClick={function () {
-              if (currentSlide) playKidsLessonSlideAudio(currentSlide);
-            }}
+            className="tv-btn emerald"
+            onClick={handleCountAgain}
           >
-            🔊 Repeat Voice
+            🔊 Count Again
           </button>
           <button
             type="button"

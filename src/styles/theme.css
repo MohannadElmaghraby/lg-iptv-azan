@@ -1000,6 +1000,64 @@ select {
   padding: 24px 36px 40px 36px;
 }
 
+/* Step-by-Step Counting Highlight Tiles */
+.kids-count-tile {
+  display: inline-flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  padding: 12px 14px;
+  margin: 6px 10px;
+  border-radius: 20px;
+  border: 3px solid transparent;
+  background-color: rgba(255, 255, 255, 0.03);
+  cursor: pointer;
+  transition: transform 0.22s ease, opacity 0.22s ease, border-color 0.22s ease, background-color 0.22s ease;
+}
+
+.kids-count-tile.waiting {
+  opacity: 0.26;
+  transform: scale(0.92);
+}
+
+.kids-count-tile.counted {
+  opacity: 0.92;
+  background-color: rgba(255, 255, 255, 0.06);
+  transform: scale(1);
+}
+
+.kids-count-tile.active {
+  opacity: 1;
+  background-color: rgba(240, 201, 77, 0.16);
+  border-color: #f0c94d;
+  box-shadow: 0 0 24px rgba(240, 201, 77, 0.35);
+  transform: scale(1.18);
+}
+
+.kids-count-num {
+  margin-top: 6px;
+  min-width: 34px;
+  padding: 2px 11px;
+  border-radius: 999px;
+  font-size: 20px;
+  font-weight: 900;
+  background-color: rgba(255, 255, 255, 0.09);
+  color: #cbd5e1;
+  text-align: center;
+}
+
+.kids-count-tile.active .kids-count-num {
+  background-color: #f0c94d;
+  color: #050608;
+  font-size: 24px;
+}
+
+.kids-count-tile.counted .kids-count-num {
+  background-color: rgba(56, 189, 248, 0.22);
+  color: #e0f2fe;
+}
+
+
 
 
 

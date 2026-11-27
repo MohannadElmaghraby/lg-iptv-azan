@@ -48,6 +48,7 @@ export const KIDS_LEARNING_LESSONS = [
     arTitle: 'الأرقام والعد بالإنجليزية (١–١٠)',
     category: 'Numbers • Ages 3–4',
     accent: '#38bdf8',
+    stepCount: true,
     slides: [
       { bigBadge: '1', word: '1 — One', subtitle: 'One Bright Star ⭐', visual: '⭐', count: 1, colorHex: '#facc15', speak: 'One! One bright star.', audio: './audio/kids/num_01.mp3' },
       { bigBadge: '2', word: '2 — Two', subtitle: 'Two Red Apples 🍎🍎', visual: '🍎', count: 2, colorHex: '#ef4444', speak: 'Two! One, two red apples.', audio: './audio/kids/num_02.mp3' },
@@ -67,6 +68,7 @@ export const KIDS_LEARNING_LESSONS = [
     arTitle: 'الأرقام الكبيرة من ١١ إلى ٢٠',
     category: 'Numbers • Ages 3–4',
     accent: '#a78bfa',
+    stepCount: true,
     slides: [
       { bigBadge: '11', word: '11 — Eleven', subtitle: 'Eleven Shiny Stars ⭐', visual: '⭐', count: 11, colorHex: '#facc15', speak: 'Eleven! Eleven shiny stars.', audio: './audio/kids/num_11.mp3' },
       { bigBadge: '12', word: '12 — Twelve', subtitle: 'Twelve Sweet Cookies 🍪', visual: '🍪', count: 12, colorHex: '#f59e0b', speak: 'Twelve! Twelve sweet cookies.', audio: './audio/kids/num_12.mp3' },
@@ -86,6 +88,7 @@ export const KIDS_LEARNING_LESSONS = [
     arTitle: 'العد والجمع البسيط للأطفال',
     category: 'Numbers • Ages 3–4',
     accent: '#22c55e',
+    stepCount: true,
     slides: [
       { bigBadge: '1 + 1 = 2', word: '1 + 1 = 2', subtitle: '🍎 + 🍎 = Two Apples!', visual: '🍎', count: 2, colorHex: '#ef4444', speak: 'One apple plus one apple equals two apples!', audio: './audio/kids/math_01.mp3' },
       { bigBadge: '2 + 1 = 3', word: '2 + 1 = 3', subtitle: '🦆🦆 + 🦆 = Three Happy Ducks!', visual: '🦆', count: 3, colorHex: '#f59e0b', speak: 'Two ducks plus one duck equals three happy ducks!', audio: './audio/kids/math_02.mp3' },
