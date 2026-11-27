@@ -1,20 +1,10 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { WEBOS_KEYS } from '../utils/spatialNav.js';
 import { formatPlaybackTime } from '../utils/watchProgress.js';
+import { playKidsLessonSlideAudio, stopKidsVoice } from '../utils/kidsGreeting.js';
 
-function speakTextSafe(text) {
-  try {
-    if (typeof window !== 'undefined' && window.speechSynthesis && typeof SpeechSynthesisUtterance !== 'undefined') {
-      window.speechSynthesis.cancel();
-      const utter = new SpeechSynthesisUtterance(text);
-      utter.lang = 'en-US';
-      utter.rate = 0.86;
-      utter.pitch = 1.12;
-      window.speechSynthesis.speak(utter);
-    }
-  } catch (e) {
-    // Ignore if SpeechSynthesis unavailable on TV
-  }
+function speakTextSafe(slide) {
+  playKidsLessonSlideAudio(slide);
 }
 
 function renderShapeSvg(shape, colorHex) {
@@ -90,16 +80,14 @@ export default function KidsLearningPlayer({
     setElapsedSec(0);
     setIsPlaying(true);
     return function () {
-      try {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-      } catch (e) { /* ignore */ }
+      stopKidsVoice();
     };
   }, [lesson && lesson.id]);
 
-  // Speak active slide word for toddlers
+  // Speak active slide word for toddlers using real bundled MP3
   useEffect(function () {
-    if (isPlaying && !externalPauseReason && currentSlide && currentSlide.speak) {
-      speakTextSafe(currentSlide.speak);
+    if (isPlaying && !externalPauseReason && currentSlide) {
+      speakTextSafe(currentSlide);
     }
   }, [slideIndex, isPlaying, externalPauseReason]);
 
@@ -126,9 +114,7 @@ export default function KidsLearningPlayer({
     if (externalPauseReason && !prevPauseRef.current) {
       wasPlayingRef.current = isPlaying;
       setIsPlaying(false);
-      try {
-        if (window.speechSynthesis) window.speechSynthesis.cancel();
-      } catch (e) { /* ignore */ }
+      stopKidsVoice();
     } else if (!externalPauseReason && prevPauseRef.current) {
       if (prevPauseRef.current === 'azan' && wasPlayingRef.current) {
         setIsPlaying(true);
@@ -281,7 +267,7 @@ export default function KidsLearningPlayer({
             data-focusable="true"
             className="tv-btn"
             onClick={function () {
-              if (currentSlide && currentSlide.speak) speakTextSafe(currentSlide.speak);
+              if (currentSlide) speakTextSafe(currentSlide);
             }}
           >
             🔊 Repeat Voice
