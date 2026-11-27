@@ -889,3 +889,34 @@ select {
   color: #bae6fd;
 }
 
+@-webkit-keyframes kidsPopIn {
+  0% { opacity: 0; -webkit-transform: scale(0.45) translateY(14px); transform: scale(0.45) translateY(14px); }
+  70% { opacity: 1; -webkit-transform: scale(1.12) translateY(-4px); transform: scale(1.12) translateY(-4px); }
+  100% { opacity: 1; -webkit-transform: scale(1) translateY(0px); transform: scale(1) translateY(0px); }
+}
+
+@keyframes kidsPopIn {
+  0% { opacity: 0; transform: scale(0.45) translateY(14px); }
+  70% { opacity: 1; transform: scale(1.12) translateY(-4px); }
+  100% { opacity: 1; transform: scale(1) translateY(0px); }
+}
+
+.kids-pop-item {
+  -webkit-animation: kidsPopIn 0.36s ease-out;
+  animation: kidsPopIn 0.36s ease-out;
+}
+
+.kids-big-badge {
+  display: inline-block;
+  padding: 8px 28px;
+  margin-bottom: 16px;
+  border-radius: 999px;
+  border: 2px solid #38bdf8;
+  font-size: 38px;
+  font-weight: 900;
+  letter-spacing: 1px;
+  -webkit-animation: kidsPopIn 0.35s ease-out;
+  animation: kidsPopIn 0.35s ease-out;
+}
+
+

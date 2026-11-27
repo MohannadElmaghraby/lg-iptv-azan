@@ -54,7 +54,7 @@ export default function Sidebar({ activeTab, onSelectTab, counts }) {
       </nav>
 
       <div className="sidebar-footer">
-        <div>Asyad TV v1.1.0 • LG OLED E8</div>
+        <div>Asyad TV v1.2.0 • LG OLED E8</div>
         <div>webOS 4.0 • D-Pad &amp; Magic Remote</div>
       </div>
     </aside>
