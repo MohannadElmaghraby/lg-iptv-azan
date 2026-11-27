@@ -2,10 +2,25 @@ import React, { useState, useMemo, useEffect } from 'react';
 import MediaCard from './MediaCard.jsx';
 import TvKeyboard from './TvKeyboard.jsx';
 import { isFavoriteItem } from '../utils/favorites.js';
-import { prepareSearchIndex, searchCatalog } from '../utils/search.js';
+import {
+  normalizeSearchText,
+  prepareSearchIndex,
+  searchCatalog,
+  sortCatalogItems,
+} from '../utils/search.js';
 import { findWatchProgressForItem } from '../utils/watchProgress.js';
+import { readStorage, writeStorage } from '../utils/storage.js';
 
-const PAGE_SIZE = 36;
+const PAGE_SIZE = 24;
+const INITIAL_GROUP_LIMIT = 50;
+const SORT_PREFS_KEY = 'category_sort_v1';
+
+const SORT_OPTIONS = [
+  { id: 'default', label: 'Default' },
+  { id: 'recent', label: 'Most Recent' },
+  { id: 'az', label: 'A–Z' },
+  { id: 'za', label: 'Z–A' },
+];
 
 export default function CategoryView({
   categoryType, // 'live' | 'movies' | 'series'
@@ -21,26 +36,43 @@ export default function CategoryView({
   onBackHome,
 }) {
   const [selectedMenu, setSelectedMenu] = useState('ALL'); // 'ALL' | 'CONTINUE' | 'FAVORITES' | groupName
+  const [catQuery, setCatQuery] = useState('');
+  const [showAllGroups, setShowAllGroups] = useState(false);
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [page, setPage] = useState(0);
 
-  // Reset sidebar menu and search when switching category
+  // Remembered sort preference per section ('live' | 'movies' | 'series')
+  const [sortPrefs, setSortPrefs] = useState(function () {
+    return readStorage(SORT_PREFS_KEY, {});
+  });
+  const sortMode = (sortPrefs && sortPrefs[categoryType]) || 'default';
+
+  const handleSetSort = function (nextMode) {
+    const nextPrefs = Object.assign({}, sortPrefs || {}, { [categoryType]: nextMode });
+    setSortPrefs(nextPrefs);
+    writeStorage(SORT_PREFS_KEY, nextPrefs);
+    setPage(0);
+  };
+
+  // Reset sidebar menu and search when switching category (keep remembered sortMode!)
   useEffect(function () {
     setSelectedMenu('ALL');
+    setCatQuery('');
+    setShowAllGroups(false);
     setQuery('');
     setDebouncedQuery('');
     setShowKeyboard(false);
     setPage(0);
   }, [categoryType]);
 
-  // Fast 80ms debounced instant auto-search while typing
+  // Fast 100ms debounced instant auto-search while typing
   useEffect(function () {
     const t = setTimeout(function () {
       setDebouncedQuery(query);
       setPage(0);
-    }, 80);
+    }, 100);
     return function () { clearTimeout(t); };
   }, [query]);
 
@@ -56,33 +88,64 @@ export default function CategoryView({
     return (favorites || []).filter(function (f) { return f.type === categoryType; });
   }, [favorites, categoryType]);
 
-  const groupCounts = useMemo(function () {
-    const map = {};
+  // Single linear pass to pre-bucket items by IPTV category -> O(1) menu switching for 15k+ items
+  const { byGroup, groupCounts } = useMemo(function () {
+    const buckets = Object.create(null);
+    const counts = Object.create(null);
     const list = items || [];
     for (let i = 0; i < list.length; i += 1) {
-      const g = list[i].group || 'Uncategorized';
-      map[g] = (map[g] || 0) + 1;
+      const it = list[i];
+      const g = it.group || 'Uncategorized';
+      if (!buckets[g]) {
+        buckets[g] = [it];
+        counts[g] = 1;
+      } else {
+        buckets[g].push(it);
+        counts[g] += 1;
+      }
     }
-    return map;
+    return { byGroup: buckets, groupCounts: counts };
   }, [items]);
+
+  // Instant Arabic/English search across left-hand IPTV categories
+  const filteredGroups = useMemo(function () {
+    const all = groups || [];
+    const norm = normalizeSearchText(catQuery);
+    if (!norm) return all;
+    return all.filter(function (g) {
+      return normalizeSearchText(g).indexOf(norm) !== -1;
+    });
+  }, [groups, catQuery]);
+
+  const visibleGroups = useMemo(function () {
+    if (catQuery.trim() || showAllGroups || filteredGroups.length <= INITIAL_GROUP_LIMIT) {
+      return filteredGroups;
+    }
+    return filteredGroups.slice(0, INITIAL_GROUP_LIMIT);
+  }, [filteredGroups, catQuery, showAllGroups]);
 
   const baseList = useMemo(function () {
     if (selectedMenu === 'CONTINUE') return categoryContinue;
     if (selectedMenu === 'FAVORITES') return categoryFavorites;
     if (selectedMenu === 'ALL') return items || [];
-    return (items || []).filter(function (it) {
-      return (it.group || 'Uncategorized') === selectedMenu;
-    });
-  }, [selectedMenu, items, categoryContinue, categoryFavorites]);
+    return byGroup[selectedMenu] || [];
+  }, [selectedMenu, items, byGroup, categoryContinue, categoryFavorites]);
 
+  // Lazy search index: ZERO blocking work on 15k+ items until the user actually types a search query!
+  const hasSearchQuery = debouncedQuery.trim().length > 0;
   const searchIndex = useMemo(function () {
+    if (!hasSearchQuery) return null;
     return prepareSearchIndex(baseList);
-  }, [baseList]);
+  }, [baseList, hasSearchQuery]);
 
   const filteredItems = useMemo(function () {
-    if (!debouncedQuery.trim()) return baseList;
-    return searchCatalog(searchIndex, debouncedQuery, { category: 'all', limit: 240 }).results;
-  }, [baseList, searchIndex, debouncedQuery]);
+    if (hasSearchQuery && searchIndex) {
+      const searched = searchCatalog(searchIndex, debouncedQuery, { category: 'all', limit: 240 }).results;
+      return sortMode === 'default' ? searched : sortCatalogItems(searched, sortMode);
+    }
+    if (selectedMenu === 'CONTINUE') return baseList;
+    return sortCatalogItems(baseList, sortMode);
+  }, [baseList, searchIndex, hasSearchQuery, debouncedQuery, sortMode, selectedMenu]);
 
   const totalPages = Math.max(1, Math.ceil(filteredItems.length / PAGE_SIZE));
   const safePage = Math.min(page, totalPages - 1);
@@ -146,12 +209,39 @@ export default function CategoryView({
           </button>
 
           {groups && groups.length > 0 && (
-            <div style={{ fontSize: 12, fontWeight: 800, color: '#667085', margin: '14px 10px 8px 10px', textTransform: 'uppercase' }}>
-              IPTV Categories
+            <div style={{ margin: '14px 4px 10px 4px' }}>
+              <div style={{ fontSize: 12, fontWeight: 800, color: '#667085', margin: '0 6px 8px 6px', textTransform: 'uppercase' }}>
+                IPTV Categories ({filteredGroups.length})
+              </div>
+              <div style={{ display: 'flex', alignItems: 'center' }}>
+                <input
+                  type="text"
+                  data-focusable="true"
+                  className="tv-input"
+                  dir="auto"
+                  aria-label="Search categories"
+                  placeholder="Search categories..."
+                  style={{ padding: '8px 12px', fontSize: 14, flex: 1 }}
+                  value={catQuery}
+                  onChange={function (e) { setCatQuery(e.target.value); }}
+                />
+                {catQuery && (
+                  <button
+                    type="button"
+                    data-focusable="true"
+                    className="tv-btn small danger"
+                    style={{ marginLeft: 6, marginRight: 0, marginBottom: 0, padding: '8px 10px' }}
+                    onClick={function () { setCatQuery(''); }}
+                    aria-label="Clear category search"
+                  >
+                    ✕
+                  </button>
+                )}
+              </div>
             </div>
           )}
 
-          {(groups || []).map(function (grp) {
+          {visibleGroups.map(function (grp) {
             return (
               <button
                 key={grp}
@@ -167,13 +257,31 @@ export default function CategoryView({
               </button>
             );
           })}
+
+          {!catQuery.trim() && !showAllGroups && filteredGroups.length > INITIAL_GROUP_LIMIT && (
+            <button
+              type="button"
+              data-focusable="true"
+              className="tv-btn small"
+              style={{ width: '100%', marginTop: 8, marginRight: 0 }}
+              onClick={function () { setShowAllGroups(true); }}
+            >
+              Show all {filteredGroups.length} categories
+            </button>
+          )}
+
+          {catQuery.trim() && filteredGroups.length === 0 && (
+            <div style={{ fontSize: 13, color: '#98a2b3', padding: '10px 10px' }}>
+              No matching categories
+            </div>
+          )}
         </div>
       </aside>
 
-      {/* Main Content + Instant Auto-Search */}
+      {/* Main Content + Instant Auto-Search + Remembered Sort */}
       <div className="category-main">
         <div className="panel" style={{ padding: '14px 18px', marginBottom: 18 }}>
-          <div className="form-row" style={{ alignItems: 'center', marginBottom: 0 }}>
+          <div className="form-row" style={{ alignItems: 'center', marginBottom: 12 }}>
             <div className="form-field" style={{ marginBottom: 0 }}>
               <input
                 type="text"
@@ -205,6 +313,27 @@ export default function CategoryView({
             >
               {showKeyboard ? 'Hide Keyboard' : '⌨ TV Keyboard'}
             </button>
+          </div>
+
+          {/* Persistent Sort Controls */}
+          <div style={{ display: 'flex', alignItems: 'center', flexWrap: 'wrap' }}>
+            <span style={{ fontSize: 13, fontWeight: 700, color: '#98a2b3', marginRight: 12 }}>
+              Sort:
+            </span>
+            {SORT_OPTIONS.map(function (opt) {
+              return (
+                <button
+                  key={opt.id}
+                  type="button"
+                  data-focusable="true"
+                  className={'chip' + (sortMode === opt.id ? ' active' : '')}
+                  style={{ marginBottom: 0, padding: '6px 14px', fontSize: 14 }}
+                  onClick={function () { handleSetSort(opt.id); }}
+                >
+                  {opt.label}
+                </button>
+              );
+            })}
           </div>
         </div>
 

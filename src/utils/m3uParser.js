@@ -161,6 +161,7 @@ export function parseM3U(text, options = {}) {
         logo: meta.attrs['tvg-logo'] || '',
         tvgId: meta.attrs['tvg-id'] || '',
         tvgName: meta.attrs['tvg-name'] || title,
+        orderIndex: items.length,
         url: streamUrl,
         rawUrl: line,
         source: 'm3u',

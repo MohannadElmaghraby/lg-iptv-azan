@@ -189,27 +189,39 @@ export default function App() {
     }
   }, []);
 
-  // Instant startup: load IndexedDB cached catalog immediately (<100ms), then refresh in background
+  // Instant startup: load IndexedDB cached catalog (<100ms); only re-fetch in background if cache is missing or > 12h old
   useEffect(function () {
     let mounted = true;
+    const CACHE_TTL_MS = 12 * 60 * 60 * 1000;
+    const saved = readStorage(SOURCE_CONFIG_KEY, null);
+
     loadCachedCatalog().then(function (cached) {
-      if (mounted && cached && Array.isArray(cached.items) && cached.items.length > 0) {
+      if (!mounted) return;
+      const hasCachedItems = Boolean(cached && Array.isArray(cached.items) && cached.items.length > 0);
+      if (hasCachedItems) {
         setCatalog(cached);
+      }
+
+      const isCacheFresh = Boolean(
+        hasCachedItems &&
+        cached.cachedAt &&
+        (Date.now() - cached.cachedAt) < CACHE_TTL_MS
+      );
+
+      if (isCacheFresh || !saved) return;
+
+      if (saved.mode === 'm3u_url' && saved.m3uUrl) {
+        handleLoadM3uUrl(saved.m3uUrl);
+      } else if (saved.mode === 'm3u_file') {
+        const cachedText = readStorage(LOCAL_M3U_CACHE_KEY, '');
+        if (cachedText) {
+          applyM3uText(cachedText, saved.fileName || 'Saved M3U File', null);
+        }
+      } else if (saved.mode === 'xtream' && saved.xtream) {
+        handleLoadXtream(saved.xtream);
       }
     });
 
-    const saved = readStorage(SOURCE_CONFIG_KEY, null);
-    if (!saved) return function () { mounted = false; };
-    if (saved.mode === 'm3u_url' && saved.m3uUrl) {
-      handleLoadM3uUrl(saved.m3uUrl);
-    } else if (saved.mode === 'm3u_file') {
-      const cachedText = readStorage(LOCAL_M3U_CACHE_KEY, '');
-      if (cachedText) {
-        applyM3uText(cachedText, saved.fileName || 'Saved M3U File', null);
-      }
-    } else if (saved.mode === 'xtream' && saved.xtream) {
-      handleLoadXtream(saved.xtream);
-    }
     return function () { mounted = false; };
   }, [handleLoadM3uUrl, handleLoadXtream, applyM3uText]);
 
@@ -480,7 +492,7 @@ export default function App() {
       : null;
 
   const activeNavObj = NAV_ITEMS.find(function (n) { return n.id === activeTab; });
-  const pageTitle = activeTab === 'home' ? 'Asyad TV v1.3.3' : (activeNavObj ? activeNavObj.label : 'Asyad TV');
+  const pageTitle = activeTab === 'home' ? 'Asyad TV v1.3.4' : (activeNavObj ? activeNavObj.label : 'Asyad TV');
 
   const sourceLabel = sourceConfig
     ? (sourceConfig.label || 'Playlist Active') + ' (' + catalog.items.length.toLocaleString() + ')'

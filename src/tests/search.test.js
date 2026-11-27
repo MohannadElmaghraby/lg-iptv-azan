@@ -1,5 +1,5 @@
 import { describe, it, expect } from 'vitest';
-import { normalizeSearchText, prepareSearchIndex, searchCatalog } from '../utils/search.js';
+import { normalizeSearchText, prepareSearchIndex, searchCatalog, sortCatalogItems } from '../utils/search.js';
 
 describe('Arabic & English Search Normalization & Ranking', () => {
   it('strips Arabic tashkeel and normalizes أ/إ/آ -> ا, ة -> ه, ى -> ي', () => {
@@ -40,5 +40,27 @@ describe('Arabic & English Search Normalization & Ranking', () => {
     expect(resEn.counts.movies).toBe(1);
     expect(resEn.results.length).toBe(1);
     expect(resEn.results[0].id).toBe('5');
+  });
+
+  it('sorts catalog items by Most Recent, A-Z, and Z-A rapidly (including 15k items)', () => {
+    const sample = [
+      { id: 'b', title: 'Beta Show', addedAt: 1700000100, orderIndex: 0 },
+      { id: 'c', title: 'Alpha Show', addedAt: 1700000500, orderIndex: 1 },
+      { id: 'a', title: 'Gamma Show', addedAt: 1700000200, orderIndex: 2 },
+    ];
+
+    expect(sortCatalogItems(sample, 'default').map((x) => x.id)).toEqual(['b', 'c', 'a']);
+    expect(sortCatalogItems(sample, 'recent').map((x) => x.id)).toEqual(['c', 'a', 'b']);
+    expect(sortCatalogItems(sample, 'az').map((x) => x.title)).toEqual(['Alpha Show', 'Beta Show', 'Gamma Show']);
+    expect(sortCatalogItems(sample, 'za').map((x) => x.title)).toEqual(['Gamma Show', 'Beta Show', 'Alpha Show']);
+
+    // Verify 15,000 items sort cleanly and fast
+    const big = new Array(15000);
+    for (let i = 0; i < 15000; i += 1) {
+      big[i] = { id: 's_' + i, title: 'Series ' + (15000 - i), addedAt: i, orderIndex: i };
+    }
+    const sortedRecent = sortCatalogItems(big, 'recent');
+    expect(sortedRecent[0].id).toBe('s_14999');
+    expect(sortedRecent[14999].id).toBe('s_0');
   });
 });

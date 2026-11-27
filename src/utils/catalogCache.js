@@ -43,10 +43,11 @@ export async function loadCachedCatalog() {
 export async function saveCachedCatalog(catalogObj) {
   try {
     const db = await openDb();
+    const payload = Object.assign({}, catalogObj, { cachedAt: Date.now() });
     return await new Promise(function (resolve) {
       const tx = db.transaction(STORE_NAME, 'readwrite');
       const store = tx.objectStore(STORE_NAME);
-      store.put(catalogObj, CACHE_KEY);
+      store.put(payload, CACHE_KEY);
       tx.oncomplete = function () { resolve(true); };
       tx.onerror = function () { resolve(false); };
     });

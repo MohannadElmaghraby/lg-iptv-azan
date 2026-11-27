@@ -101,7 +101,7 @@ export async function fetchXtreamCatalog(creds, options = {}) {
   const seriesCatMap = buildCategoryMap(seriesCats);
 
   const live = Array.isArray(liveStreams)
-    ? liveStreams.map(function (s) {
+    ? liveStreams.map(function (s, idx) {
         return {
           id: 'xt_live_' + s.stream_id,
           streamId: s.stream_id,
@@ -110,6 +110,8 @@ export async function fetchXtreamCatalog(creds, options = {}) {
           group: liveCatMap[String(s.category_id)] || 'Live TV',
           logo: s.stream_icon || '',
           epgChannelId: s.epg_channel_id || '',
+          addedAt: Number(s.added) || Number(s.stream_id) || 0,
+          orderIndex: idx,
           url: buildXtreamStreamUrl(serverUrl, username, password, 'live', s.stream_id, 'ts', convertTs),
           rawUrl: buildXtreamStreamUrl(serverUrl, username, password, 'live', s.stream_id, 'ts', false),
           source: 'xtream',
@@ -118,7 +120,7 @@ export async function fetchXtreamCatalog(creds, options = {}) {
     : [];
 
   const movies = Array.isArray(vodStreams)
-    ? vodStreams.map(function (m) {
+    ? vodStreams.map(function (m, idx) {
         const ext = m.container_extension || 'mp4';
         return {
           id: 'xt_movie_' + m.stream_id,
@@ -128,6 +130,8 @@ export async function fetchXtreamCatalog(creds, options = {}) {
           group: vodCatMap[String(m.category_id)] || 'Movies',
           logo: m.stream_icon || '',
           rating: m.rating || '',
+          addedAt: Number(m.added) || Number(m.stream_id) || 0,
+          orderIndex: idx,
           url: buildXtreamStreamUrl(serverUrl, username, password, 'movies', m.stream_id, ext, convertTs),
           rawUrl: buildXtreamStreamUrl(serverUrl, username, password, 'movies', m.stream_id, ext, false),
           source: 'xtream',
@@ -136,7 +140,7 @@ export async function fetchXtreamCatalog(creds, options = {}) {
     : [];
 
   const series = Array.isArray(seriesList)
-    ? seriesList.map(function (sr) {
+    ? seriesList.map(function (sr, idx) {
         return {
           id: 'xt_series_' + sr.series_id,
           seriesId: sr.series_id,
@@ -146,6 +150,8 @@ export async function fetchXtreamCatalog(creds, options = {}) {
           logo: sr.cover || '',
           plot: sr.plot || '',
           rating: sr.rating || '',
+          addedAt: Number(sr.last_modified) || Number(sr.series_id) || 0,
+          orderIndex: idx,
           source: 'xtream',
           isSeriesContainer: true,
         };

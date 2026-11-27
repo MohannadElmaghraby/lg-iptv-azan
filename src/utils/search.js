@@ -8,25 +8,76 @@
  *  - Latin lowercase & accent removal
  */
 
+const NON_ASCII_RE = /[^\x20-\x7E]/;
+const LATIN_ACCENT_RE = /[\u00C0-\u024F]/;
+const ARABIC_CHAR_RE = /[\u0600-\u06FF]/;
+
 export function normalizeSearchText(input) {
   if (!input || typeof input !== 'string') return '';
 
   let s = input;
-  // Normalize Latin accents via NFD
-  if (typeof s.normalize === 'function') {
+  // Fast path for plain ASCII strings (skips expensive NFD & Arabic regex passes on 15k+ TV catalogs)
+  if (!NON_ASCII_RE.test(s)) {
+    return s.toLowerCase().replace(/\s+/g, ' ').trim();
+  }
+
+  // Normalize Latin accents via NFD only when accented Latin characters exist
+  if (LATIN_ACCENT_RE.test(s) && typeof s.normalize === 'function') {
     s = s.normalize('NFD').replace(/[\u0300-\u036f]/g, '');
   }
 
-  // Strip Arabic tashkeel / harakat / tatweel
-  s = s.replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '');
-
-  // Normalize Arabic letters
-  s = s
-    .replace(/[أإآٱ]/g, 'ا')
-    .replace(/ة/g, 'ه')
-    .replace(/ى/g, 'ي');
+  // Normalize Arabic letters & strip tashkeel only when Arabic characters exist
+  if (ARABIC_CHAR_RE.test(s)) {
+    s = s
+      .replace(/[\u064B-\u065F\u0670\u06D6-\u06ED\u0640]/g, '')
+      .replace(/[أإآٱ]/g, 'ا')
+      .replace(/ة/g, 'ه')
+      .replace(/ى/g, 'ي');
+  }
 
   return s.toLowerCase().replace(/\s+/g, ' ').trim();
+}
+
+export function sortCatalogItems(items, sortMode) {
+  if (!Array.isArray(items) || items.length <= 1 || !sortMode || sortMode === 'default') {
+    return items || [];
+  }
+
+  if (sortMode === 'recent') {
+    const keyed = new Array(items.length);
+    for (let i = 0; i < items.length; i += 1) {
+      const it = items[i];
+      const ts = Number(it.addedAt) || Number(it.updatedAt) || 0;
+      const ord = typeof it.orderIndex === 'number' ? it.orderIndex : i;
+      keyed[i] = { it, ts, ord };
+    }
+    keyed.sort(function (a, b) {
+      if (b.ts !== a.ts) return b.ts - a.ts;
+      return b.ord - a.ord;
+    });
+    const out = new Array(keyed.length);
+    for (let i = 0; i < keyed.length; i += 1) out[i] = keyed[i].it;
+    return out;
+  }
+
+  if (sortMode === 'az' || sortMode === 'za') {
+    const dir = sortMode === 'az' ? 1 : -1;
+    const keyed = new Array(items.length);
+    for (let i = 0; i < items.length; i += 1) {
+      const it = items[i];
+      keyed[i] = { it, k: (it.title || '').toLowerCase() };
+    }
+    keyed.sort(function (a, b) {
+      if (a.k < b.k) return -1 * dir;
+      if (a.k > b.k) return 1 * dir;
+      return 0;
+    });
+    const out = new Array(keyed.length);
+    for (let i = 0; i < keyed.length; i += 1) out[i] = keyed[i].it;
+    return out;
+  }
+
+  return items;
 }
 
 export function prepareSearchIndex(items) {
