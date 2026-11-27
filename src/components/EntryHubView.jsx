@@ -1,5 +1,6 @@
 import React from 'react';
 import MediaCard from './MediaCard.jsx';
+import AppIcon from './AppIcon.jsx';
 import { isFavoriteItem } from '../utils/favorites.js';
 import { formatCountdown } from '../utils/azan.js';
 
@@ -23,7 +24,7 @@ export default function EntryHubView({
       id: 'live',
       title: 'Live TV',
       ar: 'البث المباشر',
-      icon: '📺',
+      iconName: 'live',
       accent: '#38bdf8',
       meta: catalog.live.length > 0 ? catalog.live.length.toLocaleString() + ' Channels' : 'Browse Live Channels',
     },
@@ -31,7 +32,7 @@ export default function EntryHubView({
       id: 'movies',
       title: 'Movies',
       ar: 'الأفلام',
-      icon: '🎬',
+      iconName: 'movies',
       accent: '#f59e0b',
       meta: catalog.movies.length > 0 ? catalog.movies.length.toLocaleString() + ' Movies' : 'Browse Movies',
     },
@@ -39,7 +40,7 @@ export default function EntryHubView({
       id: 'series',
       title: 'Series',
       ar: 'المسلسلات',
-      icon: '🎞',
+      iconName: 'series',
       accent: '#a78bfa',
       meta: catalog.series.length > 0 ? catalog.series.length.toLocaleString() + ' Series' : 'Browse Series',
     },
@@ -47,7 +48,7 @@ export default function EntryHubView({
       id: 'kids',
       title: 'Kids & Timer',
       ar: 'آسر وإياد',
-      icon: '🧸',
+      iconName: 'kids',
       accent: '#22c55e',
       meta: kidsTimer && kidsTimer.active ? 'Timer active' : 'Games • Ages 3–4 • Timer',
     },
@@ -55,7 +56,7 @@ export default function EntryHubView({
       id: 'azan',
       title: 'Prayer & Azan',
       ar: 'الصلاة والأذان',
-      icon: '🕌',
+      iconName: 'azan',
       accent: '#f0c94d',
       meta: prayer ? prayer.en + ' in ' + countdown : 'Offline Prayer Times',
     },
@@ -82,7 +83,8 @@ export default function EntryHubView({
             style={{ marginBottom: 0 }}
             onClick={function () { onNavigate('search'); }}
           >
-            🔍 Search All
+            <AppIcon name="search" size={18} style={{ marginRight: 8 }} />
+            Search All
           </button>
           <button
             type="button"
@@ -91,7 +93,8 @@ export default function EntryHubView({
             style={{ marginBottom: 0 }}
             onClick={function () { onNavigate('favorites'); }}
           >
-            ★ Favorites ({favorites.length})
+            <AppIcon name="star" size={18} style={{ marginRight: 8 }} />
+            Favorites ({favorites.length})
           </button>
           <button
             type="button"
@@ -100,7 +103,8 @@ export default function EntryHubView({
             style={{ marginBottom: 0 }}
             onClick={function () { onNavigate('settings'); }}
           >
-            ⚙ Sources &amp; Setup
+            <AppIcon name="settings" size={18} style={{ marginRight: 8 }} />
+            Sources &amp; Setup
           </button>
         </div>
       </div>
@@ -118,7 +122,9 @@ export default function EntryHubView({
               style={{ borderTop: '4px solid ' + cat.accent }}
               onClick={function () { onNavigate(cat.id); }}
             >
-              <div className="hub-tile-icon">{cat.icon}</div>
+              <div className="hub-tile-icon">
+                <AppIcon name={cat.iconName} size={62} color={cat.accent} />
+              </div>
               <div className="hub-tile-title">{cat.title}</div>
               <div className="hub-tile-ar" dir="rtl" style={{ color: cat.accent }}>
                 {cat.ar}

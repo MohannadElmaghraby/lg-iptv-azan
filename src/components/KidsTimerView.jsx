@@ -5,6 +5,7 @@ import { formatPlaybackTime } from '../utils/watchProgress.js';
 import { speakAsserAndEyadGreeting } from '../utils/kidsGreeting.js';
 import { readStorage, writeStorage } from '../utils/storage.js';
 import KidsIllustration, { mapVisualToKind } from './KidsIllustration.jsx';
+import AppIcon from './AppIcon.jsx';
 
 const AUTO_GREET_KEY = 'kids_auto_greet_v1';
 
@@ -69,17 +70,27 @@ export default function KidsTimerView({
       <div className="panel kids-greet-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
           <div style={{ display: 'flex', alignItems: 'center' }}>
-            <span key={greetPulseKey} className="kids-greet-emoji" aria-hidden="true">👋</span>
+            <span key={greetPulseKey} className="kids-greet-emoji" aria-hidden="true">
+              <AppIcon name="wave" size={62} />
+            </span>
             <div>
               <div style={{ fontSize: 30, fontWeight: 800, color: '#f0c94d', marginBottom: 4 }} dir="rtl">
-                السلام عليكم يا آسر ويا إياد! ✨
+                السلام عليكم يا آسر ويا إياد!
               </div>
               <h3 style={{ fontSize: 24, margin: '0 0 6px 0', color: '#38bdf8' }}>
-                Hi Asser! Hi Eyad! Ready for fun &amp; learning? 🧸🚀
+                Hi Asser! Hi Eyad! Ready for fun &amp; learning?
               </h3>
               <div>
-                <span className="kids-name-badge">🦁 Hi Asser • <span dir="rtl" style={{ marginLeft: 4 }}>آسر</span></span>
-                <span className="kids-name-badge sky">🚀 Hi Eyad • <span dir="rtl" style={{ marginLeft: 4 }}>إياد</span></span>
+                <span className="kids-name-badge">
+                  <KidsIllustration kind="lion" size={22} />
+                  <span style={{ marginLeft: 6 }}>Hi Asser •</span>
+                  <span dir="rtl" style={{ marginLeft: 4 }}>آسر</span>
+                </span>
+                <span className="kids-name-badge sky">
+                  <KidsIllustration kind="rocket" size={22} />
+                  <span style={{ marginLeft: 6 }}>Hi Eyad •</span>
+                  <span dir="rtl" style={{ marginLeft: 4 }}>إياد</span>
+                </span>
               </div>
             </div>
           </div>
@@ -91,7 +102,8 @@ export default function KidsTimerView({
               className="tv-btn primary"
               onClick={handleReplayGreeting}
             >
-              🔊 Say Salam &amp; Hi!
+              <AppIcon name="speaker" size={18} style={{ marginRight: 8 }} />
+              Say Salam &amp; Hi!
             </button>
             <button
               type="button"
@@ -99,7 +111,8 @@ export default function KidsTimerView({
               className={'tv-btn small' + (autoGreet ? ' emerald' : '')}
               onClick={handleToggleAutoGreet}
             >
-              {autoGreet ? '🔔 Auto-Greet: ON' : '🔕 Auto-Greet: OFF'}
+              <AppIcon name={autoGreet ? 'bell' : 'bellOff'} size={16} style={{ marginRight: 6 }} />
+              {autoGreet ? 'Auto-Greet: ON' : 'Auto-Greet: OFF'}
             </button>
             {kidsTimer.active && (
               <div
@@ -114,7 +127,8 @@ export default function KidsTimerView({
                   color: '#bae6fd',
                 }}
               >
-                ⏱ {formatPlaybackTime(kidsTimer.remainingSeconds)} left
+                <AppIcon name="timer" size={20} color="#bae6fd" style={{ marginRight: 8 }} />
+                {formatPlaybackTime(kidsTimer.remainingSeconds)} left
               </div>
             )}
           </div>
@@ -147,7 +161,8 @@ export default function KidsTimerView({
                 className={'tv-btn' + (p.seconds === 10 ? '' : ' primary')}
                 onClick={function () { onStartTimer(p.seconds); }}
               >
-                ⏱ Start {p.label}
+                <AppIcon name="timer" size={18} style={{ marginRight: 8 }} />
+                Start {p.label}
               </button>
             );
           })}
@@ -177,7 +192,10 @@ export default function KidsTimerView({
       {/* Interactive Preschool Games for Asser & Eyad */}
       <div className="section-header">
         <div>
-          <h3 className="section-title">🎮 Interactive Preschool Games — Asser &amp; Eyad</h3>
+          <h3 className="section-title">
+            <AppIcon name="game" size={26} style={{ marginRight: 10 }} />
+            Interactive Preschool Games — Asser &amp; Eyad
+          </h3>
           <div className="section-subtitle">
             Point with your LG Magic Remote or press Left/Right + OK to count numbers, match animals, and learn &ldquo;What Do We Say?&rdquo;
           </div>
@@ -205,7 +223,7 @@ export default function KidsTimerView({
                   {g.svgIcon ? (
                     <KidsIllustration kind={g.svgIcon} size={76} />
                   ) : (
-                    <span style={{ fontSize: 56 }}>{g.icon}</span>
+                    <AppIcon name="game" size={64} color={g.accent} />
                   )}
                   <span className="media-type-badge" style={{ color: g.accent, borderColor: g.accent }}>
                     {g.badge}
@@ -227,7 +245,10 @@ export default function KidsTimerView({
       {/* Built-in Ages 3-4 English Learning Videos */}
       <div className="section-header">
         <div>
-          <h3 className="section-title">🎓 Ages 3–4 English Learning (Built-In Offline)</h3>
+          <h3 className="section-title">
+            <AppIcon name="learn" size={26} style={{ marginRight: 10 }} />
+            Ages 3–4 English Learning (Built-In Offline)
+          </h3>
           <div className="section-subtitle">
             Interactive animated lessons with voice narration for Asser &amp; Eyad — works 100% offline on LG webOS 4.0
           </div>

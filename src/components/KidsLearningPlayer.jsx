@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef, useCallback } from 'react';
 import { WEBOS_KEYS } from '../utils/spatialNav.js';
 import { stopKidsVoice } from '../utils/kidsGreeting.js';
 import KidsIllustration, { mapVisualToKind } from './KidsIllustration.jsx';
+import AppIcon from './AppIcon.jsx';
 
 function renderShapeSvg(shape, colorHex) {
   const fill = colorHex || '#38bdf8';
@@ -303,7 +304,8 @@ export default function KidsLearningPlayer({
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: 16, color: accent, fontWeight: 800 }}>
-            🧸 Asser &amp; Eyad • {lesson.category}
+            <AppIcon name="kids" size={20} style={{ marginRight: 8 }} />
+            Asser &amp; Eyad • {lesson.category}
           </div>
           <h2 style={{ fontSize: 32, margin: '4px 0 0 0' }}>
             {lesson.title}{' '}
@@ -316,7 +318,8 @@ export default function KidsLearningPlayer({
         <div className="btn-row">
           {onTriggerTestAzan && (
             <button type="button" data-focusable="true" className="tv-btn small" onClick={onTriggerTestAzan}>
-              🕌 Test Azan Pause
+              <AppIcon name="azan" size={16} style={{ marginRight: 6 }} />
+              Test Azan Pause
             </button>
           )}
           <button
@@ -473,7 +476,8 @@ export default function KidsLearningPlayer({
             className="tv-btn emerald"
             onClick={handleCountAgain}
           >
-            🔊 Count Again
+            <AppIcon name="speaker" size={18} style={{ marginRight: 8 }} />
+            Count Again
           </button>
           <button
             type="button"

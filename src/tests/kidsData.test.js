@@ -3,11 +3,12 @@ import fs from 'fs';
 import path from 'path';
 import { KIDS_LEARNING_LESSONS } from '../data/kidsLessons.js';
 import { KIDS_GAMES } from '../data/kidsGames.js';
+import { hasSvgIllustration } from '../components/KidsIllustration.jsx';
 
 const PUBLIC_DIR = path.resolve(process.cwd(), 'public');
 
 describe('Kids Lessons, Step Counting & Games Asset Integrity', () => {
-  it('ensures every lesson slide audio MP3 and counting 1-20 MP3 exists on disk', () => {
+  it('ensures every lesson slide audio MP3, SVG illustration, and counting 1-20 MP3 exists', () => {
     expect(KIDS_LEARNING_LESSONS.length).toBeGreaterThanOrEqual(9);
     for (const lesson of KIDS_LEARNING_LESSONS) {
       expect(lesson.slides.length).toBeGreaterThan(0);
@@ -16,6 +17,9 @@ describe('Kids Lessons, Step Counting & Games Asset Integrity', () => {
           const p = path.join(PUBLIC_DIR, slide.audio.replace(/^\.\//, ''));
           expect(fs.existsSync(p), 'Missing lesson audio: ' + p).toBe(true);
           expect(fs.statSync(p).size).toBeGreaterThan(500);
+        }
+        if (slide.visual) {
+          expect(hasSvgIllustration(slide.visual), 'Missing SVG illustration for visual: ' + slide.visual).toBe(true);
         }
       }
     }

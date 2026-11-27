@@ -32,10 +32,37 @@ const EMOJI_SVG_MAP = {
   '🎁': 'gift',
   '☀️': 'sun',
   '🌙': 'moon',
+  '⚽': 'soccer',
+  '🎻': 'violin',
+  '🏠': 'house',
+  '🐴': 'horse',
+  '🦊': 'fox',
+  '👑': 'crown',
+  '🦉': 'owl',
+  '🐧': 'penguin',
+  '🪺': 'nest',
+  '🍊': 'orange',
+  '🪀': 'yoyo',
+  '🐳': 'whale',
+  '🐸': 'frog',
+  '🌈': 'rainbow',
+  '🎶': 'music',
+  '🧃': 'juice',
+  '🪁': 'kite',
+  '🍦': 'icecream',
+  '🚂': 'train',
+  '☂️': 'umbrella',
+  '🦓': 'zebra',
+  '🐪': 'camel',
+  '🔷': 'shapes',
 };
 
 export function mapVisualToKind(visual) {
   return EMOJI_SVG_MAP[visual] || visual;
+}
+
+export function hasSvgIllustration(visual) {
+  return Boolean(EMOJI_SVG_MAP[visual]);
 }
 
 /**
@@ -425,7 +452,267 @@ export default function KidsIllustration({ kind, size = 100 }) {
         </svg>
       );
 
+    case 'soccer':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="38" fill="#f8fafc" stroke="#1e293b" strokeWidth="4" />
+          <polygon points="50,33 64,43 59,59 41,59 36,43" fill="#1e293b" />
+          <line x1="50" y1="33" x2="50" y2="12" stroke="#1e293b" strokeWidth="3.5" />
+          <line x1="64" y1="43" x2="84" y2="36" stroke="#1e293b" strokeWidth="3.5" />
+          <line x1="59" y1="59" x2="72" y2="80" stroke="#1e293b" strokeWidth="3.5" />
+          <line x1="41" y1="59" x2="28" y2="80" stroke="#1e293b" strokeWidth="3.5" />
+          <line x1="36" y1="43" x2="16" y2="36" stroke="#1e293b" strokeWidth="3.5" />
+        </svg>
+      );
+
+    case 'violin':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <rect x="46" y="10" width="8" height="32" rx="3" fill="#78350f" />
+          <ellipse cx="50" cy="50" rx="18" ry="15" fill="#d97706" stroke="#78350f" strokeWidth="3" />
+          <ellipse cx="50" cy="70" rx="24" ry="18" fill="#d97706" stroke="#78350f" strokeWidth="3" />
+          <rect x="47" y="42" width="6" height="34" fill="#451a03" />
+          <line x1="20" y1="78" x2="82" y2="24" stroke="#fde68a" strokeWidth="4" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'house':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <polygon points="50,14 14,46 86,46" fill="#ef4444" stroke="#991b1b" strokeWidth="3" />
+          <rect x="22" y="46" width="56" height="40" rx="3" fill="#fef3c7" stroke="#b45309" strokeWidth="3" />
+          <rect x="42" y="60" width="16" height="26" rx="2" fill="#92400e" />
+          <rect x="27" y="54" width="12" height="12" rx="2" fill="#38bdf8" />
+          <rect x="61" y="54" width="12" height="12" rx="2" fill="#38bdf8" />
+        </svg>
+      );
+
+    case 'horse':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <polygon points="30,16 38,34 22,32" fill="#92400e" />
+          <polygon points="62,16 70,32 54,34" fill="#92400e" />
+          <ellipse cx="50" cy="54" rx="24" ry="30" fill="#b45309" />
+          <ellipse cx="50" cy="70" rx="16" ry="12" fill="#fde68a" />
+          <circle cx="40" cy="46" r="4" fill="#1e293b" />
+          <circle cx="60" cy="46" r="4" fill="#1e293b" />
+          <circle cx="44" cy="70" r="2.5" fill="#78350f" />
+          <circle cx="56" cy="70" r="2.5" fill="#78350f" />
+        </svg>
+      );
+
+    case 'fox':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <polygon points="20,18 42,40 22,52" fill="#f97316" />
+          <polygon points="80,18 58,40 78,52" fill="#f97316" />
+          <polygon points="50,86 18,46 82,46" fill="#f97316" />
+          <polygon points="50,86 30,58 70,58" fill="#fff7ed" />
+          <circle cx="38" cy="52" r="4" fill="#1e293b" />
+          <circle cx="62" cy="52" r="4" fill="#1e293b" />
+          <circle cx="50" cy="76" r="5" fill="#1e293b" />
+        </svg>
+      );
+
+    case 'crown':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <polygon points="14,76 14,32 34,52 50,22 66,52 86,32 86,76" fill="#facc15" stroke="#d97706" strokeWidth="4" strokeLinejoin="round" />
+          <circle cx="50" cy="60" r="6" fill="#ef4444" />
+          <circle cx="30" cy="62" r="5" fill="#38bdf8" />
+          <circle cx="70" cy="62" r="5" fill="#22c55e" />
+        </svg>
+      );
+
+    case 'owl':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <ellipse cx="50" cy="56" rx="30" ry="32" fill="#92400e" />
+          <ellipse cx="50" cy="66" rx="18" ry="18" fill="#fde68a" />
+          <circle cx="38" cy="44" r="12" fill="#ffffff" />
+          <circle cx="62" cy="44" r="12" fill="#ffffff" />
+          <circle cx="38" cy="44" r="5.5" fill="#1e293b" />
+          <circle cx="62" cy="44" r="5.5" fill="#1e293b" />
+          <polygon points="50,50 44,60 56,60" fill="#f59e0b" />
+        </svg>
+      );
+
+    case 'penguin':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <ellipse cx="50" cy="54" rx="28" ry="34" fill="#1e293b" />
+          <ellipse cx="50" cy="62" rx="18" ry="23" fill="#f8fafc" />
+          <circle cx="40" cy="38" r="4" fill="#ffffff" />
+          <circle cx="60" cy="38" r="4" fill="#ffffff" />
+          <circle cx="40" cy="38" r="2" fill="#0f172a" />
+          <circle cx="60" cy="38" r="2" fill="#0f172a" />
+          <polygon points="50,44 43,52 57,52" fill="#f97316" />
+          <ellipse cx="38" cy="86" rx="9" ry="4" fill="#f97316" />
+          <ellipse cx="62" cy="86" rx="9" ry="4" fill="#f97316" />
+        </svg>
+      );
+
+    case 'nest':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <ellipse cx="38" cy="46" rx="10" ry="13" fill="#bae6fd" stroke="#38bdf8" strokeWidth="2.5" />
+          <ellipse cx="52" cy="44" rx="10" ry="13" fill="#e0f2fe" stroke="#38bdf8" strokeWidth="2.5" />
+          <ellipse cx="64" cy="47" rx="10" ry="13" fill="#bae6fd" stroke="#38bdf8" strokeWidth="2.5" />
+          <path d="M16 54 Q50 92 84 54 Z" fill="#92400e" stroke="#78350f" strokeWidth="3" />
+          <path d="M22 60 Q50 74 78 60" fill="none" stroke="#d97706" strokeWidth="4" />
+        </svg>
+      );
+
+    case 'orange':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <circle cx="50" cy="56" r="32" fill="#f97316" stroke="#ea580c" strokeWidth="3" />
+          <ellipse cx="58" cy="22" rx="12" ry="6" transform="rotate(-20 58 22)" fill="#22c55e" />
+          <line x1="50" y1="24" x2="50" y2="14" stroke="#78350f" strokeWidth="4" strokeLinecap="round" />
+          <circle cx="38" cy="46" r="4" fill="#fed7aa" opacity="0.7" />
+        </svg>
+      );
+
+    case 'yoyo':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M50 8 Q68 24 50 40" fill="none" stroke="#e2e8f0" strokeWidth="3.5" />
+          <circle cx="50" cy="60" r="28" fill="#ef4444" stroke="#991b1b" strokeWidth="4" />
+          <circle cx="50" cy="60" r="16" fill="#facc15" />
+          <circle cx="50" cy="60" r="6" fill="#ef4444" />
+        </svg>
+      );
+
+    case 'whale':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M14 58 C14 34 40 28 60 36 C72 40 78 52 84 44 C88 38 92 48 84 58 C88 64 82 70 76 62 C68 74 20 76 14 58 Z" fill="#3b82f6" />
+          <path d="M22 66 Q44 74 62 66" fill="#dbeafe" />
+          <circle cx="30" cy="52" r="4" fill="#0f172a" />
+          <path d="M44 26 Q38 14 32 18" fill="none" stroke="#93c5fd" strokeWidth="4" strokeLinecap="round" />
+          <path d="M48 26 Q54 14 60 18" fill="none" stroke="#93c5fd" strokeWidth="4" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'frog':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <circle cx="32" cy="30" r="13" fill="#22c55e" />
+          <circle cx="68" cy="30" r="13" fill="#22c55e" />
+          <circle cx="32" cy="30" r="7" fill="#ffffff" />
+          <circle cx="68" cy="30" r="7" fill="#ffffff" />
+          <circle cx="32" cy="30" r="3.5" fill="#0f172a" />
+          <circle cx="68" cy="30" r="3.5" fill="#0f172a" />
+          <ellipse cx="50" cy="58" rx="34" ry="26" fill="#22c55e" />
+          <ellipse cx="50" cy="68" rx="22" ry="12" fill="#bbf7d0" />
+          <path d="M32 58 Q50 70 68 58" fill="none" stroke="#14532d" strokeWidth="3.5" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'rainbow':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M12 72 A38 38 0 0 1 88 72" fill="none" stroke="#ef4444" strokeWidth="7" />
+          <path d="M19 72 A31 31 0 0 1 81 72" fill="none" stroke="#f59e0b" strokeWidth="7" />
+          <path d="M26 72 A24 24 0 0 1 74 72" fill="none" stroke="#22c55e" strokeWidth="7" />
+          <path d="M33 72 A17 17 0 0 1 67 72" fill="none" stroke="#3b82f6" strokeWidth="7" />
+          <circle cx="20" cy="76" r="10" fill="#f8fafc" />
+          <circle cx="80" cy="76" r="10" fill="#f8fafc" />
+        </svg>
+      );
+
+    case 'music':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M38 72 V24 L76 16 V64" fill="none" stroke="#38bdf8" strokeWidth="7" strokeLinecap="round" strokeLinejoin="round" />
+          <circle cx="30" cy="74" r="11" fill="#ec4899" />
+          <circle cx="68" cy="66" r="11" fill="#facc15" />
+        </svg>
+      );
+
+    case 'juice':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M56 24 L68 10 L76 14" fill="none" stroke="#f8fafc" strokeWidth="5" strokeLinecap="round" strokeLinejoin="round" />
+          <rect x="26" y="26" width="48" height="62" rx="8" fill="#f97316" stroke="#ea580c" strokeWidth="3" />
+          <circle cx="50" cy="58" r="14" fill="#fde047" />
+        </svg>
+      );
+
+    case 'kite':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <polygon points="50,12 80,44 50,76 20,44" fill="#ec4899" stroke="#facc15" strokeWidth="3" />
+          <polygon points="50,12 80,44 50,44" fill="#38bdf8" />
+          <polygon points="20,44 50,44 50,76" fill="#facc15" />
+          <path d="M50 76 Q62 86 48 94" fill="none" stroke="#f8fafc" strokeWidth="3.5" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'icecream':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <polygon points="32,48 68,48 50,90" fill="#d97706" stroke="#92400e" strokeWidth="3" />
+          <circle cx="40" cy="40" r="15" fill="#f472b6" />
+          <circle cx="60" cy="40" r="15" fill="#fde047" />
+          <circle cx="50" cy="26" r="15" fill="#bae6fd" />
+          <circle cx="50" cy="12" r="5" fill="#ef4444" />
+        </svg>
+      );
+
+    case 'train':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <rect x="16" y="34" width="68" height="36" rx="8" fill="#ef4444" />
+          <rect x="52" y="20" width="26" height="22" rx="4" fill="#38bdf8" />
+          <rect x="24" y="20" width="12" height="16" rx="3" fill="#1e293b" />
+          <circle cx="32" cy="74" r="10" fill="#facc15" stroke="#1e293b" strokeWidth="4" />
+          <circle cx="68" cy="74" r="10" fill="#facc15" stroke="#1e293b" strokeWidth="4" />
+        </svg>
+      );
+
+    case 'umbrella':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M14 50 A36 36 0 0 1 86 50 Z" fill="#a855f7" stroke="#7e22ce" strokeWidth="3" />
+          <path d="M50 14 V76 C50 86 64 86 64 76" fill="none" stroke="#facc15" strokeWidth="5" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'zebra':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <ellipse cx="50" cy="54" rx="26" ry="30" fill="#f8fafc" stroke="#1e293b" strokeWidth="3" />
+          <path d="M28 42 L72 42 M26 54 L74 54 M30 66 L70 66" stroke="#1e293b" strokeWidth="5" />
+          <circle cx="40" cy="46" r="4" fill="#0f172a" />
+          <circle cx="60" cy="46" r="4" fill="#0f172a" />
+          <ellipse cx="50" cy="74" rx="14" ry="9" fill="#cbd5e1" />
+        </svg>
+      );
+
+    case 'camel':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <ellipse cx="44" cy="54" rx="24" ry="18" fill="#d97706" />
+          <ellipse cx="44" cy="36" rx="14" ry="14" fill="#d97706" />
+          <path d="M62 50 Q76 48 76 30" fill="none" stroke="#d97706" strokeWidth="10" strokeLinecap="round" />
+          <circle cx="80" cy="28" r="9" fill="#d97706" />
+          <circle cx="83" cy="26" r="2.2" fill="#1e293b" />
+          <line x1="30" y1="66" x2="30" y2="86" stroke="#b45309" strokeWidth="6" strokeLinecap="round" />
+          <line x1="56" y1="66" x2="56" y2="86" stroke="#b45309" strokeWidth="6" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'shapes':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <circle cx="30" cy="32" r="18" fill="#38bdf8" />
+          <rect x="54" y="16" width="32" height="32" rx="5" fill="#f59e0b" />
+          <polygon points="50,50 82,88 18,88" fill="#ec4899" />
+        </svg>
+      );
+
     default:
-      return <span style={{ fontSize: Math.round(s * 0.78), lineHeight: 1 }}>{kind || '⭐'}</span>;
+      return <span style={{ fontSize: Math.round(s * 0.78), lineHeight: 1 }}>{kind || '★'}</span>;
   }
 }

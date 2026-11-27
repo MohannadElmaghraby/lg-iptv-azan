@@ -3,6 +3,7 @@ import Hls from 'hls.js';
 import { formatPlaybackTime } from '../utils/watchProgress.js';
 import { WEBOS_KEYS } from '../utils/spatialNav.js';
 import { fetchXtreamShortEpg } from '../utils/xtreamClient.js';
+import AppIcon from './AppIcon.jsx';
 
 const ASPECT_MODES = [
   { id: 'fit', label: 'Fit (Original)', style: { width: '100%', height: '100%', objectFit: 'contain' } },
@@ -652,7 +653,8 @@ export default function VideoPlayer({
             pointerEvents: 'none',
           }}
         >
-          ⏳ Buffering Stream...
+          <AppIcon name="timer" size={20} color="#f0c94d" style={{ marginRight: 8 }} />
+          Buffering Stream...
         </div>
       )}
 
@@ -754,7 +756,8 @@ export default function VideoPlayer({
                   className="tv-btn small"
                   onClick={function (e) { e.stopPropagation(); onTriggerTestAzan(); }}
                 >
-                  🕌 Test Azan
+                  <AppIcon name="azan" size={16} style={{ marginRight: 6 }} />
+                  Test Azan
                 </button>
               )}
               <button

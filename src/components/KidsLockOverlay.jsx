@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppIcon from './AppIcon.jsx';
 
 export default function KidsLockOverlay({ parentPin, onUnlock }) {
   const [entered, setEntered] = useState('');
@@ -24,7 +25,10 @@ export default function KidsLockOverlay({ parentPin, onUnlock }) {
   return (
     <div className="kids-lock-overlay" data-modal-scope="kids-lock">
       <div className="pin-box">
-        <div style={{ fontSize: 48, marginBottom: 8 }}>🌙🧸</div>
+        <div style={{ marginBottom: 10 }}>
+          <AppIcon name="azan" size={48} style={{ marginRight: 10 }} />
+          <AppIcon name="kids" size={48} />
+        </div>
         <h2 style={{ fontSize: 34, margin: '0 0 8px 0', color: '#38bdf8' }}>
           Time&apos;s Up! • <span dir="rtl">انتهى الوقت</span>
         </h2>

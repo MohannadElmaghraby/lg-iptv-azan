@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { formatPlaybackTime } from '../utils/watchProgress.js';
+import AppIcon from './AppIcon.jsx';
 
 export default function MediaCard({
   item,
@@ -69,7 +70,10 @@ export default function MediaCard({
             />
           ) : (
             <span className="media-placeholder-icon">
-              {item.type === 'live' ? '📺' : item.type === 'movies' ? '🎬' : '🎞'}
+              <AppIcon
+                name={item.type === 'live' ? 'live' : item.type === 'movies' ? 'movies' : 'series'}
+                size={58}
+              />
             </span>
           )}
           <span className="media-type-badge">{typeLabel}</span>

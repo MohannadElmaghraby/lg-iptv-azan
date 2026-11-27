@@ -1,5 +1,6 @@
 import React, { useState } from 'react';
 import { KIDS_PLAYLIST_PRESETS } from '../data/kidsLessons.js';
+import AppIcon from './AppIcon.jsx';
 
 export default function SettingsView({
   sourceConfig,
@@ -94,7 +95,8 @@ export default function SettingsView({
           </button>
 
           <label className="tv-btn" data-focusable="true" tabIndex={0} style={{ cursor: 'pointer' }}>
-            📁 Upload Local .m3u / .m3u8
+            <AppIcon name="folder" size={18} style={{ marginRight: 8 }} />
+            Upload Local .m3u / .m3u8
             <input
               type="file"
               accept=".m3u,.m3u8,.txt"

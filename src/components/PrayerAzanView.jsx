@@ -1,4 +1,5 @@
 import React from 'react';
+import AppIcon from './AppIcon.jsx';
 import {
   CITY_PRESETS,
   CALCULATION_METHODS,
@@ -50,7 +51,8 @@ export default function PrayerAzanView({
       <div className="panel" style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
         <div>
           <h3 style={{ fontSize: 26, margin: '0 0 6px 0', color: '#f0c94d' }}>
-            🕌 Offline Arabic Azan &amp; Prayer Times
+            <AppIcon name="azan" size={26} style={{ marginRight: 10 }} />
+            Offline Arabic Azan &amp; Prayer Times
           </h3>
           <div style={{ fontSize: 16, color: '#98a2b3' }}>
             {nextPrayerInfo && nextPrayerInfo.prayer ? (
@@ -70,7 +72,8 @@ export default function PrayerAzanView({
             className="tv-btn primary"
             onClick={function () { onTestAzan(nextPrayerInfo && nextPrayerInfo.prayer); }}
           >
-            🔔 Test Azan Now
+            <AppIcon name="bell" size={18} style={{ marginRight: 8 }} />
+            Test Azan Now
           </button>
           {onTestAzanWithVideo && (
             <button
@@ -104,7 +107,8 @@ export default function PrayerAzanView({
                   className={'tv-btn small' + (p.enabled ? ' emerald' : '')}
                   onClick={function () { togglePrayer(p.key); }}
                 >
-                  {p.enabled ? '🔔 Azan ON' : '🔕 Muted'}
+                  <AppIcon name={p.enabled ? 'bell' : 'bellOff'} size={15} style={{ marginRight: 6 }} />
+                  {p.enabled ? 'Azan ON' : 'Muted'}
                 </button>
                 <button
                   type="button"

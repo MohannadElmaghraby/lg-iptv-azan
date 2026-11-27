@@ -1,15 +1,16 @@
 import React from 'react';
+import AppIcon from './AppIcon.jsx';
 
 export const NAV_ITEMS = [
-  { id: 'home', label: 'Home', icon: '⌂' },
-  { id: 'live', label: 'Live TV', icon: '📺' },
-  { id: 'movies', label: 'Movies', icon: '🎬' },
-  { id: 'series', label: 'Series', icon: '🎞' },
-  { id: 'search', label: 'Search', icon: '🔍' },
-  { id: 'favorites', label: 'Favorites', icon: '★' },
-  { id: 'kids', label: 'Kids & Timer', icon: '🧸' },
-  { id: 'azan', label: 'Prayer & Azan', icon: '🕌' },
-  { id: 'settings', label: 'Sources & Setup', icon: '⚙' },
+  { id: 'home', label: 'Home', iconName: 'home' },
+  { id: 'live', label: 'Live TV', iconName: 'live' },
+  { id: 'movies', label: 'Movies', iconName: 'movies' },
+  { id: 'series', label: 'Series', iconName: 'series' },
+  { id: 'search', label: 'Search', iconName: 'search' },
+  { id: 'favorites', label: 'Favorites', iconName: 'star' },
+  { id: 'kids', label: 'Kids & Timer', iconName: 'kids' },
+  { id: 'azan', label: 'Prayer & Azan', iconName: 'azan' },
+  { id: 'settings', label: 'Sources & Setup', iconName: 'settings' },
 ];
 
 export default function Sidebar({ activeTab, onSelectTab, counts }) {
@@ -43,7 +44,9 @@ export default function Sidebar({ activeTab, onSelectTab, counts }) {
               className={'nav-btn' + (isActive ? ' active' : '')}
               onClick={function () { onSelectTab(item.id); }}
             >
-              <span className="nav-btn-icon">{item.icon}</span>
+              <span className="nav-btn-icon">
+                <AppIcon name={item.iconName} size={22} />
+              </span>
               <span>{item.label}</span>
               {badge !== null && (
                 <span className="nav-btn-badge">{badge.toLocaleString()}</span>

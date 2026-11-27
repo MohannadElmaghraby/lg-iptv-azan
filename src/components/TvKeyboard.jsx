@@ -1,4 +1,5 @@
 import React, { useState } from 'react';
+import AppIcon from './AppIcon.jsx';
 
 const EN_ROWS = [
   ['1', '2', '3', '4', '5', '6', '7', '8', '9', '0'],
@@ -61,7 +62,8 @@ export default function TvKeyboard({ value, onChange }) {
           className="kb-key lang"
           onClick={function () { setLang(lang === 'en' ? 'ar' : 'en'); }}
         >
-          {lang === 'en' ? '🌐 العربية' : '🌐 English'}
+          <AppIcon name="globe" size={18} style={{ marginRight: 6 }} />
+          {lang === 'en' ? 'العربية' : 'English'}
         </button>
         <button
           type="button"

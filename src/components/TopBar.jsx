@@ -1,6 +1,7 @@
 import React from 'react';
 import { formatCountdown } from '../utils/azan.js';
 import { formatPlaybackTime } from '../utils/watchProgress.js';
+import AppIcon from './AppIcon.jsx';
 
 export default function TopBar({
   title,
@@ -50,7 +51,8 @@ export default function TopBar({
             onClick={onOpenKids}
             title="Kids Watch Timer"
           >
-            <span>🧸 Kids Timer: {formatPlaybackTime(kidsTimer.remainingSeconds)}</span>
+            <AppIcon name="kids" size={18} style={{ marginRight: 6 }} />
+            <span>Kids Timer: {formatPlaybackTime(kidsTimer.remainingSeconds)}</span>
           </button>
         )}
 

@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { WEBOS_KEYS } from '../utils/spatialNav.js';
 import { stopKidsVoice } from '../utils/kidsGreeting.js';
 import KidsIllustration from './KidsIllustration.jsx';
+import AppIcon from './AppIcon.jsx';
 
 const PLAYERS = [
   { id: 'asser', label: 'Asser (آسر)' },
@@ -108,7 +109,7 @@ export default function KidsGamePlayer({
       setStars(nextStars);
       setFeedback({
         ok: true,
-        text: '🌟 Good Job!',
+        text: '★ Good Job!',
       });
       playClip('./audio/kids/game_good_job.mp3');
 
@@ -118,7 +119,7 @@ export default function KidsGamePlayer({
     } else {
       setFeedback({
         ok: false,
-        text: '💛 Try Again!',
+        text: 'Try Again!',
       });
       playClip('./audio/kids/game_try_again.mp3');
     }
@@ -247,7 +248,8 @@ export default function KidsGamePlayer({
             style={{ marginBottom: 0 }}
             onClick={function () { if (round.audio) playClip(round.audio); }}
           >
-            🔊 Hear Question
+            <AppIcon name="speaker" size={20} style={{ marginRight: 8 }} />
+            Hear Question
           </button>
         </div>
 
