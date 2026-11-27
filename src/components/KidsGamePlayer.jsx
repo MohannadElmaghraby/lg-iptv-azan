@@ -1,17 +1,12 @@
 import React, { useState, useEffect, useRef } from 'react';
 import { WEBOS_KEYS } from '../utils/spatialNav.js';
 import { stopKidsVoice } from '../utils/kidsGreeting.js';
+import KidsIllustration from './KidsIllustration.jsx';
 
 const PLAYERS = [
-  { id: 'asser', label: '🦁 Asser (آسر)' },
-  { id: 'eyad', label: '🚀 Eyad (إياد)' },
-  { id: 'both', label: '👬 Asser & Eyad' },
-];
-
-const PRAISE_CLIPS = [
-  './audio/kids/game_yay_1.mp3',
-  './audio/kids/game_yay_2.mp3',
-  './audio/kids/game_yay_ar.mp3',
+  { id: 'asser', label: 'Asser (آسر)' },
+  { id: 'eyad', label: 'Eyad (إياد)' },
+  { id: 'both', label: 'Asser & Eyad' },
 ];
 
 export default function KidsGamePlayer({
@@ -65,7 +60,6 @@ export default function KidsGamePlayer({
     }
   };
 
-  // Play question voice automatically on each round
   useEffect(function () {
     setFeedback(null);
     setLockedInput(false);
@@ -78,7 +72,6 @@ export default function KidsGamePlayer({
     };
   }, [game && game.id, roundIdx]);
 
-  // Pause audio immediately if Azan or Kids Timer locks
   useEffect(function () {
     if (externalPauseReason) {
       stopGameAudio();
@@ -108,29 +101,21 @@ export default function KidsGamePlayer({
       setLockedInput(true);
       const nextStars = stars + 1;
       setStars(nextStars);
-      const isFiveMilestone = nextStars > 0 && nextStars % 5 === 0;
       setFeedback({
         ok: true,
-        text: isFiveMilestone
-          ? '🏆 Woohoo! ' + nextStars + ' Golden Stars!'
-          : '🌟 Great Job!',
+        text: '🌟 Good Job!',
       });
-
-      const praiseClip = isFiveMilestone
-        ? './audio/kids/game_win5.mp3'
-        : choice.okAudio || round.praiseAudio || PRAISE_CLIPS[roundIdx % PRAISE_CLIPS.length];
-
-      playClip(praiseClip);
+      playClip('./audio/kids/game_good_job.mp3');
 
       nextTimerRef.current = setTimeout(function () {
         setRoundIdx(function (idx) { return (idx + 1) % rounds.length; });
-      }, 2400);
+      }, 1700);
     } else {
       setFeedback({
         ok: false,
-        text: '💛 Let’s try again!',
+        text: '💛 Try Again!',
       });
-      playClip(choice.tryAudio || './audio/kids/game_oops.mp3');
+      playClip('./audio/kids/game_try_again.mp3');
     }
   };
 
@@ -148,11 +133,11 @@ export default function KidsGamePlayer({
       data-modal-scope="kids-game"
       style={{ backgroundColor: '#05080f', padding: '24px 42px', justifyContent: 'space-between' }}
     >
-      {/* Top Bar: Game Title, Player Switcher, Stars Counter */}
+      {/* Top Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
         <div>
           <div style={{ fontSize: 15, color: accent, fontWeight: 800 }}>
-            🎮 {game.badge} • Round {roundIdx + 1} / {rounds.length}
+            {game.badge} • Round {roundIdx + 1} / {rounds.length}
           </div>
           <h2 style={{ fontSize: 30, margin: '4px 0 0 0' }}>
             {game.title}{' '}
@@ -190,12 +175,12 @@ export default function KidsGamePlayer({
               color: '#f7dc7a',
             }}
           >
-            ⭐ {stars} Stars
+            ★ {stars} Stars
           </div>
 
           {onTriggerTestAzan && (
             <button type="button" data-focusable="true" className="tv-btn small" style={{ marginBottom: 0 }} onClick={onTriggerTestAzan}>
-              🕌 Test Azan
+              Test Azan
             </button>
           )}
           <button
@@ -227,20 +212,17 @@ export default function KidsGamePlayer({
           padding: '24px 36px',
         }}
       >
-        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', marginBottom: 16 }}>
+        <div style={{ display: 'flex', flexWrap: 'wrap', justifyContent: 'center', alignItems: 'center', marginBottom: 18 }}>
           {visualItems.map(function (n) {
+            const sz = count > 6 ? 88 : count > 3 ? 102 : 118;
             return (
-              <span
-                key={n}
-                className="kids-pop-item"
-                style={{
-                  fontSize: count > 5 ? 78 : 108,
-                  margin: '0 12px',
-                  lineHeight: 1.15,
-                }}
-              >
-                {round.visual}
-              </span>
+              <div key={n} className="kids-pop-item" style={{ margin: '6px 12px' }}>
+                {round.svg ? (
+                  <KidsIllustration kind={round.svg} size={sz} />
+                ) : (
+                  <span style={{ fontSize: Math.round(sz * 0.8), lineHeight: 1.1 }}>{round.visual}</span>
+                )}
+              </div>
             );
           })}
         </div>
@@ -270,7 +252,7 @@ export default function KidsGamePlayer({
             style={{
               padding: '12px 28px',
               borderRadius: 999,
-              fontSize: 26,
+              fontSize: 28,
               fontWeight: 800,
               backgroundColor: feedback.ok ? 'rgba(16, 185, 129, 0.22)' : 'rgba(245, 158, 11, 0.2)',
               border: '2px solid ' + (feedback.ok ? '#10b981' : '#f59e0b'),
@@ -301,16 +283,20 @@ export default function KidsGamePlayer({
                     height: 112,
                     borderRadius: '50%',
                     backgroundColor: ch.colorHex,
-                    border: '4px solid rgba(255, 255, 255, 0.75)',
+                    border: '4px solid rgba(255, 255, 255, 0.78)',
                     boxShadow: '0 8px 24px rgba(0, 0, 0, 0.5)',
                   }}
                 />
-              ) : game.hideChoiceText && ch.icon ? (
-                <div style={{ fontSize: 96, lineHeight: 1.05 }}>{ch.icon}</div>
+              ) : game.hideChoiceText && ch.svg ? (
+                <KidsIllustration kind={ch.svg} size={114} />
               ) : (
                 <div style={{ display: 'flex', flexDirection: 'column', alignItems: 'center' }}>
-                  {ch.icon && <div style={{ fontSize: 54, marginBottom: 6 }}>{ch.icon}</div>}
-                  <div style={{ fontSize: ch.icon ? 34 : 68, fontWeight: 900, color: '#f5f7fa' }} dir="auto">
+                  {ch.svg ? (
+                    <div style={{ marginBottom: 6 }}><KidsIllustration kind={ch.svg} size={64} /></div>
+                  ) : (
+                    ch.icon && <div style={{ fontSize: 54, marginBottom: 6 }}>{ch.icon}</div>
+                  )}
+                  <div style={{ fontSize: (ch.icon || ch.svg) ? 34 : 68, fontWeight: 900, color: '#f5f7fa' }} dir="auto">
                     {ch.label}
                   </div>
                   {ch.sub && (

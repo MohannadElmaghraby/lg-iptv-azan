@@ -9,6 +9,8 @@ export default function TopBar({
   nextPrayerInfo,
   kidsTimer,
   now,
+  showBackButton,
+  onBackHome,
   onOpenAzan,
   onOpenKids,
 }) {
@@ -22,6 +24,17 @@ export default function TopBar({
   return (
     <header className="top-bar">
       <div className="top-bar-left">
+        {showBackButton && onBackHome && (
+          <button
+            type="button"
+            data-focusable="true"
+            className="tv-btn small"
+            style={{ marginBottom: 0, marginRight: 16 }}
+            onClick={onBackHome}
+          >
+            ← Back to Categories
+          </button>
+        )}
         <h2 className="page-heading">{title}</h2>
         <span className={'source-pill' + (isSourceLoaded ? ' online' : '')}>
           {sourceLabel || 'No Playlist Loaded'}

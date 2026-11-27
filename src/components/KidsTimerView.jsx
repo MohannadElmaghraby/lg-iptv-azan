@@ -4,6 +4,7 @@ import { KIDS_GAMES } from '../data/kidsGames.js';
 import { formatPlaybackTime } from '../utils/watchProgress.js';
 import { speakAsserAndEyadGreeting } from '../utils/kidsGreeting.js';
 import { readStorage, writeStorage } from '../utils/storage.js';
+import KidsIllustration, { mapVisualToKind } from './KidsIllustration.jsx';
 
 const AUTO_GREET_KEY = 'kids_auto_greet_v1';
 
@@ -201,7 +202,11 @@ export default function KidsTimerView({
                     borderBottom: '2px solid ' + g.accent,
                   }}
                 >
-                  <span style={{ fontSize: 56 }}>{g.icon}</span>
+                  {g.svgIcon ? (
+                    <KidsIllustration kind={g.svgIcon} size={76} />
+                  ) : (
+                    <span style={{ fontSize: 56 }}>{g.icon}</span>
+                  )}
                   <span className="media-type-badge" style={{ color: g.accent, borderColor: g.accent }}>
                     {g.badge}
                   </span>
@@ -231,6 +236,7 @@ export default function KidsTimerView({
 
       <div className="cards-grid" style={{ marginBottom: 24 }}>
         {KIDS_LEARNING_LESSONS.map(function (lesson) {
+          const thumbVisual = lesson.slides[0] && (lesson.slides[0].visual || '🔷');
           return (
             <div className="media-card-wrap" key={lesson.id} style={{ width: 280 }}>
               <button
@@ -247,9 +253,7 @@ export default function KidsTimerView({
                     borderBottom: '2px solid ' + lesson.accent,
                   }}
                 >
-                  <span style={{ fontSize: 54 }}>
-                    {lesson.slides[0] && (lesson.slides[0].visual || '🔷')}
-                  </span>
+                  <KidsIllustration kind={mapVisualToKind(thumbVisual)} size={78} />
                   <span className="media-type-badge" style={{ color: lesson.accent, borderColor: lesson.accent }}>
                     AGES 3–4
                   </span>

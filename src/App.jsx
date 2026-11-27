@@ -1,8 +1,8 @@
 import React, { useState, useEffect, useRef, useCallback, useMemo } from 'react';
-import Sidebar, { NAV_ITEMS } from './components/Sidebar.jsx';
+import { NAV_ITEMS } from './components/Sidebar.jsx';
 import TopBar from './components/TopBar.jsx';
-import HomeView from './components/HomeView.jsx';
-import PaginatedGrid from './components/PaginatedGrid.jsx';
+import EntryHubView from './components/EntryHubView.jsx';
+import CategoryView from './components/CategoryView.jsx';
 import SearchView from './components/SearchView.jsx';
 import FavoritesView from './components/FavoritesView.jsx';
 import KidsTimerView from './components/KidsTimerView.jsx';
@@ -18,6 +18,7 @@ import { ResumePromptModal, SeriesModal } from './components/SeriesModal.jsx';
 import { readStorage, writeStorage, removeStorage } from './utils/storage.js';
 import { parseM3U } from './utils/m3uParser.js';
 import { fetchXtreamCatalog } from './utils/xtreamClient.js';
+import { loadCachedCatalog, saveCachedCatalog, clearCachedCatalog } from './utils/catalogCache.js';
 import { loadFavorites, toggleFavoriteItem } from './utils/favorites.js';
 import {
   loadWatchProgress,
@@ -95,10 +96,10 @@ export default function App() {
   const convertTsRef = useRef(convertTsToM3u8);
   convertTsRef.current = convertTsToM3u8;
 
-  // Load M3U text into catalog
   const applyM3uText = useCallback(function (text, label, persistConfig) {
     const parsed = parseM3U(text, { convertTs: convertTsRef.current });
     setCatalog(parsed);
+    saveCachedCatalog(parsed);
     if (persistConfig) {
       writeStorage(SOURCE_CONFIG_KEY, persistConfig);
       setSourceConfig(persistConfig);
@@ -151,13 +152,15 @@ export default function App() {
     setSourceStatus(null);
     try {
       const data = await fetchXtreamCatalog(creds, { convertTs: convertTsRef.current });
-      setCatalog({
+      const nextCat = {
         items: data.items,
         live: data.live,
         movies: data.movies,
         series: data.series,
         groups: data.groups,
-      });
+      };
+      setCatalog(nextCat);
+      saveCachedCatalog(nextCat);
       const cfg = {
         mode: 'xtream',
         xtream: creds,
@@ -186,10 +189,17 @@ export default function App() {
     }
   }, []);
 
-  // Auto-load persisted source on startup
+  // Instant startup: load IndexedDB cached catalog immediately (<100ms), then refresh in background
   useEffect(function () {
+    let mounted = true;
+    loadCachedCatalog().then(function (cached) {
+      if (mounted && cached && Array.isArray(cached.items) && cached.items.length > 0) {
+        setCatalog(cached);
+      }
+    });
+
     const saved = readStorage(SOURCE_CONFIG_KEY, null);
-    if (!saved) return;
+    if (!saved) return function () { mounted = false; };
     if (saved.mode === 'm3u_url' && saved.m3uUrl) {
       handleLoadM3uUrl(saved.m3uUrl);
     } else if (saved.mode === 'm3u_file') {
@@ -200,6 +210,7 @@ export default function App() {
     } else if (saved.mode === 'xtream' && saved.xtream) {
       handleLoadXtream(saved.xtream);
     }
+    return function () { mounted = false; };
   }, [handleLoadM3uUrl, handleLoadXtream, applyM3uText]);
 
   const handleToggleConvertTs = function (nextVal) {
@@ -219,6 +230,7 @@ export default function App() {
   const handleClearCatalog = function () {
     removeStorage(SOURCE_CONFIG_KEY);
     removeStorage(LOCAL_M3U_CACHE_KEY);
+    clearCachedCatalog();
     setSourceConfig(null);
     setCatalog(EMPTY_CATALOG);
     setSourceStatus({ error: false, message: 'Saved IPTV source cleared.' });
@@ -251,7 +263,6 @@ export default function App() {
   }, [azanSettings.customAudioUrl]);
 
   const handleTestAzanWithVideo = function () {
-    // Play a live channel if loaded, otherwise launch built-in learning video, then trigger Azan after 1.5s
     if (catalog.live && catalog.live.length > 0) {
       setPlayingStartSec(0);
       setPlayingItem(catalog.live[0]);
@@ -270,7 +281,6 @@ export default function App() {
       const current = new Date();
       setNow(current);
 
-      // Check Azan arrival against today's enabled prayers
       const info = getNextPrayerInfo(current, azanSettings);
       const dayStamp = current.getFullYear() + '-' + current.getMonth() + '-' + current.getDate();
       for (let i = 0; i < info.schedule.length; i += 1) {
@@ -285,7 +295,6 @@ export default function App() {
         }
       }
 
-      // Tick Kids Timer
       setKidsTimer(function (prev) {
         if (!prev.active) return prev;
         if (prev.remainingSeconds <= 1) {
@@ -303,7 +312,6 @@ export default function App() {
     return getNextPrayerInfo(now, azanSettings);
   }, [now, azanSettings]);
 
-  // Favorites & Continue Watching handlers
   const handleToggleFavorite = function (item) {
     setFavorites(function (prev) {
       return toggleFavoriteItem(prev, item);
@@ -410,7 +418,6 @@ export default function App() {
         }
       }
 
-      // Spatial D-pad arrows
       const inInput = isTextEntryElement(document.activeElement);
       const scope = getScopeRoot();
 
@@ -424,7 +431,6 @@ export default function App() {
         moveSpatialFocus('right', scope);
       } else if (code === WEBOS_KEYS.UP) {
         if (playingItem && scope.getAttribute && scope.getAttribute('data-modal-scope') === 'player') {
-          // Let VideoPlayer handle up/down zapping when OSD hidden; otherwise navigate OSD
           if (!document.querySelector('.player-osd')) return;
         }
         e.preventDefault();
@@ -450,7 +456,6 @@ export default function App() {
     return function () { window.removeEventListener('keydown', onKeyDown); };
   }, [activeAzanPrayer, kidsLocked, resumePromptEntry, seriesModalItem, playingItem, activeLesson, activeGame, activeTab, dismissAzan]);
 
-  // Focus first element inside newly opened overlays
   useEffect(function () {
     const scope =
       document.querySelector('[data-modal-scope="azan-overlay"]') ||
@@ -470,163 +475,139 @@ export default function App() {
       : null;
 
   const activeNavObj = NAV_ITEMS.find(function (n) { return n.id === activeTab; });
-  const pageTitle = activeNavObj ? activeNavObj.label : 'Asyad TV';
+  const pageTitle = activeTab === 'home' ? 'Asyad TV v1.3.0' : (activeNavObj ? activeNavObj.label : 'Asyad TV');
 
   const sourceLabel = sourceConfig
     ? (sourceConfig.label || 'Playlist Active') + ' (' + catalog.items.length.toLocaleString() + ')'
     : 'No Playlist Loaded';
 
+  const isCategoryWorkspace = activeTab === 'live' || activeTab === 'movies' || activeTab === 'series';
+
   return (
-    <div className="tv-shell">
-      <Sidebar
-        activeTab={activeTab}
-        onSelectTab={setActiveTab}
-        counts={{
-          live: catalog.live.length,
-          movies: catalog.movies.length,
-          series: catalog.series.length,
-          favorites: favorites.length,
-        }}
+    <div className="tv-shell" style={{ flexDirection: 'column' }}>
+      <TopBar
+        title={pageTitle}
+        sourceLabel={sourceLabel}
+        isSourceLoaded={catalog.items.length > 0}
+        nextPrayerInfo={nextPrayerInfo}
+        kidsTimer={kidsTimer}
+        now={now}
+        showBackButton={activeTab !== 'home'}
+        onBackHome={function () { setActiveTab('home'); }}
+        onOpenAzan={function () { setActiveTab('azan'); }}
+        onOpenKids={function () { setActiveTab('kids'); }}
       />
 
-      <main className="tv-main">
-        <TopBar
-          title={pageTitle}
-          sourceLabel={sourceLabel}
-          isSourceLoaded={catalog.items.length > 0}
-          nextPrayerInfo={nextPrayerInfo}
-          kidsTimer={kidsTimer}
-          now={now}
-          onOpenAzan={function () { setActiveTab('azan'); }}
-          onOpenKids={function () { setActiveTab('kids'); }}
-        />
-
-        <div className="tv-content">
-          {activeTab === 'home' && (
-            <HomeView
-              catalog={catalog}
-              continueWatching={watchProgress}
-              favorites={favorites}
-              onSelectItem={handleSelectItem}
-              onResumeItem={handleResumeCardSelect}
-              onRemoveContinueItem={handleRemoveContinueItem}
-              onClearAllContinue={handleClearAllContinue}
-              onToggleFavorite={handleToggleFavorite}
-              onNavigate={setActiveTab}
-            />
-          )}
-
-          {activeTab === 'live' && (
-            <PaginatedGrid
-              items={catalog.live}
-              groups={catalog.groups.live}
-              favorites={favorites}
-              onSelectItem={handleSelectItem}
-              onToggleFavorite={handleToggleFavorite}
-              emptyTitle="No Live Channels Loaded"
-              emptySubtitle="Add an M3U_Plus URL, local .m3u file, or Xtream Codes account in Sources & Setup — or load free public Kids channels in Kids & Timer."
-            />
-          )}
-
-          {activeTab === 'movies' && (
-            <PaginatedGrid
-              items={catalog.movies}
-              groups={catalog.groups.movies}
-              favorites={favorites}
-              onSelectItem={handleSelectItem}
-              onToggleFavorite={handleToggleFavorite}
-              emptyTitle="No Movies Loaded"
-              emptySubtitle="Movies from your M3U_Plus or Xtream Codes source will appear here."
-            />
-          )}
-
-          {activeTab === 'series' && (
-            <PaginatedGrid
-              items={catalog.series}
-              groups={catalog.groups.series}
-              favorites={favorites}
-              onSelectItem={handleSelectItem}
-              onToggleFavorite={handleToggleFavorite}
-              emptyTitle="No Series Loaded"
-              emptySubtitle="Series from your M3U_Plus or Xtream Codes source will appear here."
-            />
-          )}
-
-          {activeTab === 'search' && (
-            <SearchView
-              allItems={catalog.items}
-              favorites={favorites}
-              onSelectItem={handleSelectItem}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          )}
-
-          {activeTab === 'favorites' && (
-            <FavoritesView
-              favorites={favorites}
-              onSelectItem={handleSelectItem}
-              onToggleFavorite={handleToggleFavorite}
-            />
-          )}
-
-          {activeTab === 'kids' && (
-            <KidsTimerView
-              kidsTimer={kidsTimer}
-              parentPin={parentPin}
-              onStartTimer={function (sec) {
-                setKidsLocked(false);
-                setKidsTimer({ active: true, remainingSeconds: sec });
-              }}
-              onStopTimer={function () {
-                setKidsTimer({ active: false, remainingSeconds: 0 });
-              }}
-              onChangePin={function (pin) {
-                setParentPin(pin);
-                writeStorage(PARENT_PIN_KEY, pin);
-              }}
-              onStartLesson={function (lesson) {
-                setActiveLesson(lesson);
-              }}
-              onStartGame={function (game) {
-                setActiveGame(game);
-              }}
-              onLoadKidsM3u={function (url) {
-                handleLoadM3uUrl(url).then(function () {
-                  setActiveTab('live');
-                });
-              }}
-              loadingM3u={loadingSource}
-            />
-          )}
-
-          {activeTab === 'azan' && (
-            <PrayerAzanView
-              settings={azanSettings}
-              nextPrayerInfo={nextPrayerInfo}
-              onUpdateSettings={function (next) {
-                saveAzanSettings(next);
-                setAzanSettings(next);
-              }}
-              onTestAzan={triggerAzan}
-              onTestAzanWithVideo={handleTestAzanWithVideo}
-            />
-          )}
-
-          {activeTab === 'settings' && (
-            <SettingsView
-              sourceConfig={sourceConfig}
-              convertTsToM3u8={convertTsToM3u8}
-              loadingSource={loadingSource}
-              sourceStatus={sourceStatus}
-              onToggleConvertTs={handleToggleConvertTs}
-              onLoadM3uUrl={handleLoadM3uUrl}
-              onLoadM3uFileText={handleLoadM3uFileText}
-              onLoadXtream={handleLoadXtream}
-              onClearCatalog={handleClearCatalog}
-            />
-          )}
+      {isCategoryWorkspace ? (
+        <div style={{ flex: 1, overflow: 'hidden' }}>
+          <CategoryView
+            categoryType={activeTab}
+            title={activeTab === 'live' ? 'Live TV' : activeTab === 'movies' ? 'Movies' : 'Series'}
+            items={catalog[activeTab] || []}
+            groups={(catalog.groups && catalog.groups[activeTab]) || []}
+            favorites={favorites}
+            continueWatching={watchProgress}
+            onSelectItem={handleSelectItem}
+            onResumeItem={handleResumeCardSelect}
+            onRemoveContinueItem={handleRemoveContinueItem}
+            onToggleFavorite={handleToggleFavorite}
+            onBackHome={function () { setActiveTab('home'); }}
+          />
         </div>
-      </main>
+      ) : (
+        <main className="tv-main">
+          <div className="tv-content">
+            {activeTab === 'home' && (
+              <EntryHubView
+                catalog={catalog}
+                continueWatching={watchProgress}
+                favorites={favorites}
+                nextPrayerInfo={nextPrayerInfo}
+                kidsTimer={kidsTimer}
+                onNavigate={setActiveTab}
+                onResumeItem={handleResumeCardSelect}
+                onRemoveContinueItem={handleRemoveContinueItem}
+                onClearAllContinue={handleClearAllContinue}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            )}
+
+            {activeTab === 'search' && (
+              <SearchView
+                allItems={catalog.items}
+                favorites={favorites}
+                onSelectItem={handleSelectItem}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            )}
+
+            {activeTab === 'favorites' && (
+              <FavoritesView
+                favorites={favorites}
+                onSelectItem={handleSelectItem}
+                onToggleFavorite={handleToggleFavorite}
+              />
+            )}
+
+            {activeTab === 'kids' && (
+              <KidsTimerView
+                kidsTimer={kidsTimer}
+                parentPin={parentPin}
+                onStartTimer={function (sec) {
+                  setKidsLocked(false);
+                  setKidsTimer({ active: true, remainingSeconds: sec });
+                }}
+                onStopTimer={function () {
+                  setKidsTimer({ active: false, remainingSeconds: 0 });
+                }}
+                onChangePin={function (pin) {
+                  setParentPin(pin);
+                  writeStorage(PARENT_PIN_KEY, pin);
+                }}
+                onStartLesson={function (lesson) {
+                  setActiveLesson(lesson);
+                }}
+                onStartGame={function (game) {
+                  setActiveGame(game);
+                }}
+                onLoadKidsM3u={function (url) {
+                  handleLoadM3uUrl(url).then(function () {
+                    setActiveTab('live');
+                  });
+                }}
+                loadingM3u={loadingSource}
+              />
+            )}
+
+            {activeTab === 'azan' && (
+              <PrayerAzanView
+                settings={azanSettings}
+                nextPrayerInfo={nextPrayerInfo}
+                onUpdateSettings={function (next) {
+                  saveAzanSettings(next);
+                  setAzanSettings(next);
+                }}
+                onTestAzan={triggerAzan}
+                onTestAzanWithVideo={handleTestAzanWithVideo}
+              />
+            )}
+
+            {activeTab === 'settings' && (
+              <SettingsView
+                sourceConfig={sourceConfig}
+                convertTsToM3u8={convertTsToM3u8}
+                loadingSource={loadingSource}
+                sourceStatus={sourceStatus}
+                onToggleConvertTs={handleToggleConvertTs}
+                onLoadM3uUrl={handleLoadM3uUrl}
+                onLoadM3uFileText={handleLoadM3uFileText}
+                onLoadXtream={handleLoadXtream}
+                onClearCatalog={handleClearCatalog}
+              />
+            )}
+          </div>
+        </main>
+      )}
 
       {/* Fullscreen Video Player */}
       {playingItem && (

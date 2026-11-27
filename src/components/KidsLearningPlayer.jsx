@@ -2,6 +2,7 @@ import React, { useState, useEffect, useRef } from 'react';
 import { WEBOS_KEYS } from '../utils/spatialNav.js';
 import { formatPlaybackTime } from '../utils/watchProgress.js';
 import { playKidsLessonSlideAudio, stopKidsVoice } from '../utils/kidsGreeting.js';
+import KidsIllustration, { mapVisualToKind } from './KidsIllustration.jsx';
 
 function renderShapeSvg(shape, colorHex) {
   const fill = colorHex || '#38bdf8';
@@ -267,14 +268,10 @@ export default function KidsLearningPlayer({
                     margin: isMany ? '6px 10px' : '8px 14px',
                   }}
                 >
-                  <span
-                    style={{
-                      fontSize: isMany ? 64 : isMed ? 82 : 112,
-                      lineHeight: 1.1,
-                    }}
-                  >
-                    {currentSlide.visual}
-                  </span>
+                  <KidsIllustration
+                    kind={mapVisualToKind(currentSlide.visual)}
+                    size={isMany ? 68 : isMed ? 86 : 116}
+                  />
                   {count > 1 && (
                     <span
                       style={{

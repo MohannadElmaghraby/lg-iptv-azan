@@ -937,5 +937,69 @@ select {
   text-align: center;
 }
 
+/* Entry Screen Category Hub (No left sidebar clutter) */
+.hub-tiles-row {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -18px;
+}
+
+.hub-tile {
+  width: 344px;
+  min-height: 228px;
+  margin-right: 18px;
+  margin-bottom: 18px;
+  padding: 28px 24px;
+  border-radius: 20px;
+  border: 2px solid var(--border-subtle);
+  background: linear-gradient(180deg, #101520 0%, #090c12 100%);
+  color: var(--text-primary);
+  text-align: left;
+  cursor: pointer;
+  display: flex;
+  flex-direction: column;
+  justify-content: center;
+}
+
+.hub-tile-icon {
+  font-size: 48px;
+  margin-bottom: 14px;
+}
+
+.hub-tile-title {
+  font-size: 26px;
+  font-weight: 800;
+  color: var(--text-primary);
+  margin-bottom: 4px;
+}
+
+.hub-tile-ar {
+  font-size: 20px;
+  font-weight: 700;
+  margin-bottom: 10px;
+}
+
+.hub-tile-meta {
+  font-size: 15px;
+  color: var(--text-secondary);
+  font-weight: 600;
+}
+
+/* Dedicated Category Workspace (Left IPTV Categories Sidebar + Main Auto-Search Grid) */
+.category-workspace {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  overflow: hidden;
+}
+
+.category-main {
+  flex: 1;
+  height: 100%;
+  overflow-y: auto;
+  padding: 24px 36px 40px 36px;
+}
+
+
 
 

@@ -5,9 +5,11 @@ import { WEBOS_KEYS } from '../utils/spatialNav.js';
 import { fetchXtreamShortEpg } from '../utils/xtreamClient.js';
 
 const ASPECT_MODES = [
-  { id: 'contain', label: 'Contain' },
-  { id: 'cover', label: 'Cover' },
-  { id: 'fill', label: 'Fill' },
+  { id: 'fit', label: 'Fit (Original)', style: { width: '100%', height: '100%', objectFit: 'contain' } },
+  { id: '16_9', label: '16:9 Fill', style: { width: '100%', height: '100%', objectFit: 'fill' } },
+  { id: '4_3', label: '4:3 Classic', style: { width: '75%', height: '100%', objectFit: 'fill' } },
+  { id: 'zoom', label: 'Zoom (Crop)', style: { width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.18)' } },
+  { id: 'cinema', label: 'Cinema 21:9', style: { width: '100%', height: '74%', objectFit: 'fill' } },
 ];
 
 export default function VideoPlayer({
@@ -26,30 +28,43 @@ export default function VideoPlayer({
   const videoRef = useRef(null);
   const hlsRef = useRef(null);
   const osdTimerRef = useRef(null);
+  const hudTimerRef = useRef(null);
+  const holdIntervalRef = useRef(null);
+  const holdStepCountRef = useRef(0);
   const wasPlayingRef = useRef(false);
   const prevPauseReasonRef = useRef(null);
   const initialSeekDoneRef = useRef(false);
 
   const [osdVisible, setOsdVisible] = useState(true);
   const [isPlaying, setIsPlaying] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(true);
   const [currentTime, setCurrentTime] = useState(0);
   const [duration, setDuration] = useState(0);
   const [aspectIdx, setAspectIdx] = useState(0);
+  const [hudToast, setHudToast] = useState('');
   const [errorMsg, setErrorMsg] = useState('');
   const [usingNativeFallback, setUsingNativeFallback] = useState(false);
 
   // Quality, Audio, Subtitles (CC)
   const [qualities, setQualities] = useState([]);
-  const [selectedQuality, setSelectedQuality] = useState(-1); // -1 = Auto
+  const [selectedQuality, setSelectedQuality] = useState(-1);
   const [audioTracks, setAudioTracks] = useState([]);
   const [selectedAudio, setSelectedAudio] = useState(0);
   const [subtitleTracks, setSubtitleTracks] = useState([]);
-  const [selectedSubtitle, setSelectedSubtitle] = useState(-1); // -1 = Off
+  const [selectedSubtitle, setSelectedSubtitle] = useState(-1);
   const [activeCueText, setActiveCueText] = useState('');
-  const [openDrawer, setOpenDrawer] = useState(null); // null | 'quality' | 'audio' | 'subtitles'
+  const [openDrawer, setOpenDrawer] = useState(null);
 
   // Xtream EPG
   const [epgList, setEpgList] = useState([]);
+
+  const showHudToast = useCallback(function (text) {
+    setHudToast(text);
+    if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
+    hudTimerRef.current = setTimeout(function () {
+      setHudToast('');
+    }, 1800);
+  }, []);
 
   const showOsd = useCallback(function () {
     setOsdVisible(true);
@@ -60,14 +75,23 @@ export default function VideoPlayer({
     }, 5000);
   }, []);
 
+  const stopHoldSeek = useCallback(function () {
+    if (holdIntervalRef.current) {
+      clearInterval(holdIntervalRef.current);
+      holdIntervalRef.current = null;
+    }
+    holdStepCountRef.current = 0;
+  }, []);
+
   useEffect(function () {
     showOsd();
     return function () {
       if (osdTimerRef.current) clearTimeout(osdTimerRef.current);
+      if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
+      stopHoldSeek();
     };
-  }, [item && item.id, showOsd]);
+  }, [item && item.id, showOsd, stopHoldSeek]);
 
-  // Fetch EPG if Xtream live channel
   useEffect(function () {
     let active = true;
     setEpgList([]);
@@ -79,7 +103,6 @@ export default function VideoPlayer({
     return function () { active = false; };
   }, [item, xtreamCreds]);
 
-  // Sync HTML5 textTracks + hls.subtitleTracks
   const refreshTracks = useCallback(function () {
     const video = videoRef.current;
     const hls = hlsRef.current;
@@ -133,7 +156,6 @@ export default function VideoPlayer({
     }
   }, []);
 
-  // Apply subtitle selection and read cues into OLED-styled RTL/LTR overlay
   useEffect(function () {
     const video = videoRef.current;
     const hls = hlsRef.current;
@@ -150,38 +172,30 @@ export default function VideoPlayer({
       const track = video.textTracks[i];
       if (selectedSubtitle === -1) {
         track.mode = 'disabled';
-      } else {
-        const isTarget =
-          (hls && hls.subtitleTracks && hls.subtitleTracks.length > 0)
-            ? i === selectedSubtitle
-            : i === selectedSubtitle;
-
-        if (isTarget) {
-          // Use 'hidden' so we render crisp custom OLED RTL/LTR captions without double text
-          track.mode = 'hidden';
-          const onCueChange = function () {
-            try {
-              const cues = track.activeCues;
-              if (cues && cues.length > 0) {
-                const lines = [];
-                for (let c = 0; c < cues.length; c += 1) {
-                  if (cues[c].text) lines.push(cues[c].text.replace(/<[^>]+>/g, ''));
-                }
-                setActiveCueText(lines.join('\n'));
-              } else {
-                setActiveCueText('');
+      } else if (i === selectedSubtitle) {
+        track.mode = 'hidden';
+        const onCueChange = function () {
+          try {
+            const cues = track.activeCues;
+            if (cues && cues.length > 0) {
+              const lines = [];
+              for (let c = 0; c < cues.length; c += 1) {
+                if (cues[c].text) lines.push(cues[c].text.replace(/<[^>]+>/g, ''));
               }
-            } catch (e) {
+              setActiveCueText(lines.join('\n'));
+            } else {
               setActiveCueText('');
             }
-          };
-          track.addEventListener('cuechange', onCueChange);
-          cleanupListeners.push(function () {
-            track.removeEventListener('cuechange', onCueChange);
-          });
-        } else {
-          track.mode = 'disabled';
-        }
+          } catch (e) {
+            setActiveCueText('');
+          }
+        };
+        track.addEventListener('cuechange', onCueChange);
+        cleanupListeners.push(function () {
+          track.removeEventListener('cuechange', onCueChange);
+        });
+      } else {
+        track.mode = 'disabled';
       }
     }
 
@@ -192,13 +206,14 @@ export default function VideoPlayer({
     };
   }, [selectedSubtitle, subtitleTracks]);
 
-  // Load media stream via hls.js with automatic native <video> fallback
+  // Fast HLS + Native Playback with pre-buffering cache tuning
   useEffect(function () {
     const video = videoRef.current;
     if (!video || !item || !item.url) return undefined;
 
     setErrorMsg('');
     setUsingNativeFallback(false);
+    setIsBuffering(true);
     setQualities([]);
     setSelectedQuality(-1);
     setAudioTracks([]);
@@ -228,8 +243,12 @@ export default function VideoPlayer({
       const hls = new Hls({
         enableWorker: true,
         lowLatencyMode: item.type === 'live',
-        maxBufferLength: 24,
-        maxMaxBufferLength: 48,
+        abrEwmaDefaultEstimate: 5000000,
+        maxBufferLength: 30,
+        maxMaxBufferLength: 60,
+        backBufferLength: 30,
+        fragLoadingTimeOut: 10000,
+        manifestLoadingTimeOut: 8000,
       });
       hlsRef.current = hls;
       hls.loadSource(url);
@@ -262,7 +281,6 @@ export default function VideoPlayer({
           } else if (data.type === Hls.ErrorTypes.MEDIA_ERROR) {
             hls.recoverMediaError();
           } else {
-            // Automatic fallback to native <video> playback
             hls.destroy();
             hlsRef.current = null;
             startNativePlayback(url);
@@ -277,9 +295,7 @@ export default function VideoPlayer({
       if (!initialSeekDoneRef.current && startSeconds > 0 && item.type !== 'live') {
         try {
           video.currentTime = startSeconds;
-        } catch (e) {
-          // ignore
-        }
+        } catch (e) { /* ignore */ }
         initialSeekDoneRef.current = true;
       }
       setDuration(isFinite(video.duration) ? video.duration : 0);
@@ -293,7 +309,11 @@ export default function VideoPlayer({
 
     const onPlay = function () { setIsPlaying(true); };
     const onPause = function () { setIsPlaying(false); };
+    const onWaiting = function () { setIsBuffering(true); };
+    const onCanPlay = function () { setIsBuffering(false); };
+    const onPlaying = function () { setIsBuffering(false); setIsPlaying(true); };
     const onError = function () {
+      setIsBuffering(false);
       if (!hlsRef.current) {
         setErrorMsg('Unable to play this stream on this browser/device. Check the stream URL or CORS.');
       }
@@ -303,6 +323,9 @@ export default function VideoPlayer({
     video.addEventListener('timeupdate', onTimeUpdate);
     video.addEventListener('play', onPlay);
     video.addEventListener('pause', onPause);
+    video.addEventListener('waiting', onWaiting);
+    video.addEventListener('canplay', onCanPlay);
+    video.addEventListener('playing', onPlaying);
     video.addEventListener('error', onError);
     if (video.textTracks && video.textTracks.addEventListener) {
       video.textTracks.addEventListener('addtrack', refreshTracks);
@@ -330,6 +353,9 @@ export default function VideoPlayer({
       video.removeEventListener('timeupdate', onTimeUpdate);
       video.removeEventListener('play', onPlay);
       video.removeEventListener('pause', onPause);
+      video.removeEventListener('waiting', onWaiting);
+      video.removeEventListener('canplay', onCanPlay);
+      video.removeEventListener('playing', onPlaying);
       video.removeEventListener('error', onError);
       if (video.textTracks && video.textTracks.removeEventListener) {
         video.textTracks.removeEventListener('addtrack', refreshTracks);
@@ -344,7 +370,7 @@ export default function VideoPlayer({
     };
   }, [item, startSeconds, refreshTracks]);
 
-  // Periodic watch progress save every 4 seconds
+  // Periodic watch progress save
   useEffect(function () {
     if (!item || item.type === 'live' || !onSaveProgress) return undefined;
     const interval = setInterval(function () {
@@ -381,7 +407,6 @@ export default function VideoPlayer({
         video.pause();
       }
     } else if (!externalPauseReason && prevPauseReasonRef.current) {
-      // Auto-resume when Azan finishes or is dismissed
       if (prevPauseReasonRef.current === 'azan' && wasPlayingRef.current) {
         video.play().catch(function () {});
       }
@@ -394,24 +419,48 @@ export default function VideoPlayer({
   const togglePlayPause = useCallback(function () {
     const video = videoRef.current;
     if (!video) return;
-    if (video.paused) video.play().catch(function () {});
-    else video.pause();
+    if (video.paused) {
+      video.play().catch(function () {});
+      showHudToast('▶ Playing');
+    } else {
+      video.pause();
+      showHudToast('⏸ Paused');
+    }
     showOsd();
-  }, [showOsd]);
+  }, [showOsd, showHudToast]);
 
   const seekBy = useCallback(function (deltaSeconds) {
     const video = videoRef.current;
-    if (!video || (item && item.type === 'live')) return;
-    const next = Math.max(0, Math.min(video.duration || Infinity, (video.currentTime || 0) + deltaSeconds));
+    if (!video) return;
+    const canSeek = (item && item.type !== 'live') || (video.seekable && video.seekable.length > 0 && isFinite(video.duration));
+    if (!canSeek) return;
+    const maxDur = isFinite(video.duration) ? video.duration : Infinity;
+    const next = Math.max(0, Math.min(maxDur, (video.currentTime || 0) + deltaSeconds));
     video.currentTime = next;
+    setCurrentTime(next);
+    const sign = deltaSeconds > 0 ? '+' : '';
+    showHudToast((deltaSeconds > 0 ? '⏩ ' : '⏪ ') + sign + deltaSeconds + 's  •  ' + formatPlaybackTime(next));
     showOsd();
-  }, [item, showOsd]);
+  }, [item, showOsd, showHudToast]);
+
+  // Long-press / hold accelerating seek (-10s -> -30s -> -60s)
+  const startHoldSeek = useCallback(function (direction) {
+    stopHoldSeek();
+    seekBy(direction * 10);
+    holdStepCountRef.current = 1;
+    holdIntervalRef.current = setInterval(function () {
+      holdStepCountRef.current += 1;
+      const step = holdStepCountRef.current >= 7 ? 60 : holdStepCountRef.current >= 3 ? 30 : 10;
+      seekBy(direction * step);
+    }, 220);
+  }, [seekBy, stopHoldSeek]);
 
   const handleStartOver = function () {
     const video = videoRef.current;
     if (!video) return;
     video.currentTime = 0;
     video.play().catch(function () {});
+    showHudToast('↺ Started Over');
     showOsd();
   };
 
@@ -430,12 +479,22 @@ export default function VideoPlayer({
     showOsd();
   }, [item, liveChannels, onSwitchChannel, showOsd]);
 
+  const cycleAspectRatio = function () {
+    const nextIdx = (aspectIdx + 1) % ASPECT_MODES.length;
+    setAspectIdx(nextIdx);
+    showHudToast('Aspect Ratio: ' + ASPECT_MODES[nextIdx].label);
+    showOsd();
+  };
+
   const cycleSubtitles = function () {
     if (subtitleTracks.length === 0) return;
     if (selectedSubtitle >= subtitleTracks.length - 1) {
       setSelectedSubtitle(-1);
+      showHudToast('Subtitles: Off');
     } else {
-      setSelectedSubtitle(selectedSubtitle + 1);
+      const nextSub = selectedSubtitle + 1;
+      setSelectedSubtitle(nextSub);
+      showHudToast('Subtitles: ' + subtitleTracks[nextSub].label);
     }
     showOsd();
   };
@@ -462,8 +521,10 @@ export default function VideoPlayer({
     showOsd();
   };
 
-  // Player-specific media & zapping keys
+  // Player media keys + long-press key repeat acceleration
   useEffect(function () {
+    let keyRepeatCount = 0;
+
     const onKeyDown = function (e) {
       if (externalPauseReason) return;
       const code = e.keyCode || e.which;
@@ -472,18 +533,34 @@ export default function VideoPlayer({
       if (code === WEBOS_KEYS.PLAY) {
         e.preventDefault();
         if (videoRef.current) videoRef.current.play().catch(function () {});
+        showHudToast('▶ Playing');
       } else if (code === WEBOS_KEYS.PAUSE) {
         e.preventDefault();
         if (videoRef.current) videoRef.current.pause();
+        showHudToast('⏸ Paused');
       } else if (code === WEBOS_KEYS.MEDIA_PLAY_PAUSE || code === WEBOS_KEYS.SPACE) {
         e.preventDefault();
         togglePlayPause();
       } else if (code === WEBOS_KEYS.REWIND) {
         e.preventDefault();
-        seekBy(-10);
+        keyRepeatCount = e.repeat ? keyRepeatCount + 1 : 0;
+        const step = keyRepeatCount >= 6 ? 60 : keyRepeatCount >= 2 ? 30 : 10;
+        seekBy(-step);
       } else if (code === WEBOS_KEYS.FAST_FORWARD) {
         e.preventDefault();
-        seekBy(10);
+        keyRepeatCount = e.repeat ? keyRepeatCount + 1 : 0;
+        const step = keyRepeatCount >= 6 ? 60 : keyRepeatCount >= 2 ? 30 : 10;
+        seekBy(step);
+      } else if (!osdVisible && code === WEBOS_KEYS.LEFT) {
+        e.preventDefault();
+        keyRepeatCount = e.repeat ? keyRepeatCount + 1 : 0;
+        const step = keyRepeatCount >= 6 ? 60 : keyRepeatCount >= 2 ? 30 : 10;
+        seekBy(-step);
+      } else if (!osdVisible && code === WEBOS_KEYS.RIGHT) {
+        e.preventDefault();
+        keyRepeatCount = e.repeat ? keyRepeatCount + 1 : 0;
+        const step = keyRepeatCount >= 6 ? 60 : keyRepeatCount >= 2 ? 30 : 10;
+        seekBy(step);
       } else if (code === WEBOS_KEYS.STOP || code === WEBOS_KEYS.BACK || code === WEBOS_KEYS.ESCAPE) {
         e.preventDefault();
         if (openDrawer) {
@@ -503,9 +580,17 @@ export default function VideoPlayer({
       }
     };
 
+    const onKeyUp = function () {
+      keyRepeatCount = 0;
+    };
+
     window.addEventListener('keydown', onKeyDown);
-    return function () { window.removeEventListener('keydown', onKeyDown); };
-  }, [externalPauseReason, osdVisible, openDrawer, item, showOsd, togglePlayPause, seekBy, zapChannel, onClose]);
+    window.addEventListener('keyup', onKeyUp);
+    return function () {
+      window.removeEventListener('keydown', onKeyDown);
+      window.removeEventListener('keyup', onKeyUp);
+    };
+  }, [externalPauseReason, osdVisible, openDrawer, item, showOsd, showHudToast, togglePlayPause, seekBy, zapChannel, onClose]);
 
   const aspectMode = ASPECT_MODES[aspectIdx];
   const progressPct = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
@@ -517,12 +602,72 @@ export default function VideoPlayer({
       onClick={showOsd}
       data-modal-scope="player"
     >
-      <video
-        ref={videoRef}
-        className="player-video-el"
-        style={{ objectFit: aspectMode.id }}
-        playsInline
-      />
+      {/* Centered Stage Box so 4:3, 16:9, Cinema 21:9, Fit, and Zoom reshape reliably in Chromium 53 */}
+      <div
+        style={{
+          width: '100%',
+          height: '100%',
+          display: 'flex',
+          alignItems: 'center',
+          justifyContent: 'center',
+          backgroundColor: '#000000',
+          overflow: 'hidden',
+        }}
+      >
+        <video
+          ref={videoRef}
+          className="player-video-el"
+          preload="auto"
+          style={aspectMode.style}
+          playsInline
+        />
+      </div>
+
+      {/* Buffering Indicator */}
+      {isBuffering && !errorMsg && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '50%',
+            left: '50%',
+            transform: 'translate(-50%, -50%)',
+            padding: '14px 28px',
+            borderRadius: 999,
+            backgroundColor: 'rgba(5, 6, 8, 0.85)',
+            border: '2px solid rgba(240, 201, 77, 0.5)',
+            fontSize: 20,
+            fontWeight: 700,
+            color: '#f0c94d',
+            zIndex: 14,
+            pointerEvents: 'none',
+          }}
+        >
+          ⏳ Buffering Stream...
+        </div>
+      )}
+
+      {/* Center Action / Seek / Aspect Toast HUD */}
+      {hudToast && (
+        <div
+          style={{
+            position: 'absolute',
+            top: '18%',
+            left: '50%',
+            transform: 'translateX(-50%)',
+            padding: '12px 28px',
+            borderRadius: 999,
+            backgroundColor: 'rgba(5, 6, 8, 0.9)',
+            border: '2px solid #f0c94d',
+            fontSize: 24,
+            fontWeight: 800,
+            color: '#f5f7fa',
+            zIndex: 24,
+            pointerEvents: 'none',
+          }}
+        >
+          {hudToast}
+        </div>
+      )}
 
       {/* High-contrast OLED Subtitles / Captions (CC) Overlay */}
       {selectedSubtitle !== -1 && activeCueText && (
@@ -581,7 +726,7 @@ export default function VideoPlayer({
                 </h2>
               </div>
               <div style={{ fontSize: 16, color: '#cbd5e1' }} dir="auto">
-                {item.group || 'Stream'} {usingNativeFallback ? '• Native Video Mode' : '• HLS Engine'}
+                {item.group || 'Stream'} {usingNativeFallback ? '• Native Video Mode' : '• HLS Fast Cache'} • {aspectMode.label}
               </div>
               {epgList.length > 0 && (
                 <div style={{ marginTop: 8, fontSize: 15, color: '#f0c94d' }} dir="auto">
@@ -599,7 +744,7 @@ export default function VideoPlayer({
                   className="tv-btn small"
                   onClick={function (e) { e.stopPropagation(); onTriggerTestAzan(); }}
                 >
-                  🕌 Test Azan Pause
+                  🕌 Test Azan
                 </button>
               )}
               <button
@@ -728,7 +873,7 @@ export default function VideoPlayer({
             {item.type !== 'live' && (
               <div style={{ marginBottom: 14 }}>
                 <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, color: '#cbd5e1', marginBottom: 6 }}>
-                  <span>{formatPlaybackTime(currentTime)}</span>
+                  <span>{formatPlaybackTime(currentTime)} (Hold -10s / +10s to seek faster)</span>
                   <span>{duration > 0 ? formatPlaybackTime(duration) : '--:--'}</span>
                 </div>
                 <div className="progress-track" style={{ height: 8 }}>
@@ -750,16 +895,24 @@ export default function VideoPlayer({
                   </button>
                 )}
 
-                {item.type !== 'live' && (
-                  <button
-                    type="button"
-                    data-focusable="true"
-                    className="tv-btn small"
-                    onClick={function () { seekBy(-10); }}
-                  >
-                    ⏪ -10s
-                  </button>
-                )}
+                <button
+                  type="button"
+                  data-focusable="true"
+                  className="tv-btn small"
+                  onMouseDown={function () { startHoldSeek(-1); }}
+                  onMouseUp={stopHoldSeek}
+                  onMouseLeave={stopHoldSeek}
+                  onTouchStart={function () { startHoldSeek(-1); }}
+                  onTouchEnd={stopHoldSeek}
+                  onKeyDown={function (e) {
+                    if ((e.keyCode || e.which) === WEBOS_KEYS.OK) {
+                      e.preventDefault();
+                      seekBy(e.repeat ? -30 : -10);
+                    }
+                  }}
+                >
+                  ⏪ -10s
+                </button>
 
                 <button
                   type="button"
@@ -770,16 +923,24 @@ export default function VideoPlayer({
                   {isPlaying ? '⏸ Pause' : '▶ Play'}
                 </button>
 
-                {item.type !== 'live' && (
-                  <button
-                    type="button"
-                    data-focusable="true"
-                    className="tv-btn small"
-                    onClick={function () { seekBy(10); }}
-                  >
-                    +10s ⏩
-                  </button>
-                )}
+                <button
+                  type="button"
+                  data-focusable="true"
+                  className="tv-btn small"
+                  onMouseDown={function () { startHoldSeek(1); }}
+                  onMouseUp={stopHoldSeek}
+                  onMouseLeave={stopHoldSeek}
+                  onTouchStart={function () { startHoldSeek(1); }}
+                  onTouchEnd={stopHoldSeek}
+                  onKeyDown={function (e) {
+                    if ((e.keyCode || e.which) === WEBOS_KEYS.OK) {
+                      e.preventDefault();
+                      seekBy(e.repeat ? 30 : 10);
+                    }
+                  }}
+                >
+                  +10s ⏩
+                </button>
 
                 {item.type !== 'live' && currentTime > 5 && (
                   <button
@@ -809,7 +970,7 @@ export default function VideoPlayer({
                   type="button"
                   data-focusable="true"
                   className="tv-btn small"
-                  onClick={function () { setAspectIdx((aspectIdx + 1) % ASPECT_MODES.length); }}
+                  onClick={cycleAspectRatio}
                 >
                   Aspect: {aspectMode.label}
                 </button>
