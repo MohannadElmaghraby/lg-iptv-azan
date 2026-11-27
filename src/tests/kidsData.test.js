@@ -27,6 +27,7 @@ describe('Kids Lessons, Step Counting & Games Asset Integrity', () => {
 
     const azanPath = path.join(PUBLIC_DIR, 'audio', 'azan.mp3');
     expect(fs.existsSync(azanPath), 'Missing bundled azan.mp3').toBe(true);
+    expect(fs.statSync(azanPath).size, 'azan.mp3 too small (expected real recording)').toBeGreaterThan(1000000);
   });
 
   it('ensures every preschool game round has 3 choices, 1 correct answer, and valid audio', () => {
