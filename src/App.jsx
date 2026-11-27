@@ -23,7 +23,7 @@ import { loadFavorites, toggleFavoriteItem } from './utils/favorites.js';
 import {
   loadWatchProgress,
   upsertWatchProgress,
-  getWatchProgressById,
+  findWatchProgressForItem,
   isResumableProgress,
   removeWatchProgressById,
   clearAllWatchProgress,
@@ -346,9 +346,14 @@ export default function App() {
       return;
     }
     if (item.type !== 'live') {
-      const saved = getWatchProgressById(watchProgress, item.id);
+      const saved = findWatchProgressForItem(watchProgress, item);
       if (saved && isResumableProgress(saved)) {
-        setResumePromptEntry(saved);
+        setResumePromptEntry(Object.assign({}, saved, {
+          url: item.url || saved.url,
+          title: item.title || saved.title,
+          logo: item.logo || saved.logo,
+          group: item.group || saved.group,
+        }));
         return;
       }
     }
@@ -677,6 +682,10 @@ export default function App() {
         onPlayEpisode={function (ep) {
           setSeriesModalItem(null);
           handleSelectItem(ep);
+        }}
+        onResumeEpisode={function (ep, startSec) {
+          setSeriesModalItem(null);
+          startPlayback(ep, startSec || 0);
         }}
         onClose={function () { setSeriesModalItem(null); }}
       />

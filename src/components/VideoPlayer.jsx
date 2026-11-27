@@ -32,6 +32,11 @@ export default function VideoPlayer({
   const hudTimerRef = useRef(null);
   const holdIntervalRef = useRef(null);
   const holdStepCountRef = useRef(0);
+  const keyHoldTimeoutRef = useRef(null);
+  const keyHoldIntervalRef = useRef(null);
+  const keyHoldDirRef = useRef(0);
+  const keyHoldStepsRef = useRef(0);
+  const osdNavModeRef = useRef(false);
   const didMouseDownRef = useRef(false);
   const playPauseBtnRef = useRef(null);
   const wasPlayingRef = useRef(false);
@@ -69,21 +74,56 @@ export default function VideoPlayer({
     }, 1800);
   }, []);
 
-  const showOsd = useCallback(function () {
+  const hideOsd = useCallback(function () {
+    if (osdTimerRef.current) {
+      clearTimeout(osdTimerRef.current);
+      osdTimerRef.current = null;
+    }
+    osdNavModeRef.current = false;
+    setOpenDrawer(null);
+    setOsdVisible(false);
+    try {
+      const osdEl = document.querySelector('.player-osd');
+      if (osdEl && document.activeElement && osdEl.contains(document.activeElement)) {
+        document.activeElement.blur();
+      }
+    } catch (e) { /* ignore */ }
+  }, []);
+
+  const showOsd = useCallback(function (enterNavMode) {
     setOsdVisible(true);
+    if (enterNavMode === true) {
+      osdNavModeRef.current = true;
+    }
     if (osdTimerRef.current) clearTimeout(osdTimerRef.current);
     osdTimerRef.current = setTimeout(function () {
+      osdNavModeRef.current = false;
       setOsdVisible(false);
       setOpenDrawer(null);
     }, 5000);
-    setTimeout(function () {
-      const osdEl = document.querySelector('.player-osd');
-      if (osdEl && (!document.activeElement || !osdEl.contains(document.activeElement))) {
-        if (playPauseBtnRef.current) {
-          try { playPauseBtnRef.current.focus(); } catch (e) { /* ignore */ }
+    if (enterNavMode === true) {
+      setTimeout(function () {
+        const osdEl = document.querySelector('.player-osd');
+        if (osdEl && (!document.activeElement || !osdEl.contains(document.activeElement))) {
+          if (playPauseBtnRef.current) {
+            try { playPauseBtnRef.current.focus(); } catch (e) { /* ignore */ }
+          }
         }
-      }
-    }, 20);
+      }, 20);
+    }
+  }, []);
+
+  const stopKeyHoldSeek = useCallback(function () {
+    if (keyHoldTimeoutRef.current) {
+      clearTimeout(keyHoldTimeoutRef.current);
+      keyHoldTimeoutRef.current = null;
+    }
+    if (keyHoldIntervalRef.current) {
+      clearInterval(keyHoldIntervalRef.current);
+      keyHoldIntervalRef.current = null;
+    }
+    keyHoldDirRef.current = 0;
+    keyHoldStepsRef.current = 0;
   }, []);
 
   const stopHoldSeek = useCallback(function () {
@@ -92,10 +132,12 @@ export default function VideoPlayer({
       holdIntervalRef.current = null;
     }
     holdStepCountRef.current = 0;
-  }, []);
+    stopKeyHoldSeek();
+  }, [stopKeyHoldSeek]);
 
   useEffect(function () {
-    showOsd();
+    osdNavModeRef.current = false;
+    showOsd(false);
     return function () {
       if (osdTimerRef.current) clearTimeout(osdTimerRef.current);
       if (hudTimerRef.current) clearTimeout(hudTimerRef.current);
@@ -532,76 +574,208 @@ export default function VideoPlayer({
     showOsd();
   };
 
-  // Player media keys + long-press key repeat acceleration
+  // Player media keys + Back hides OSD first + OK pauses/plays + Left/Right +/-10s & continuous long-press seek
   useEffect(function () {
-    let keyRepeatCount = 0;
+    const startArrowKeySeek = function (dir) {
+      stopKeyHoldSeek();
+      keyHoldDirRef.current = dir;
+      keyHoldStepsRef.current = 1;
+      seekBy(dir * 10);
+      keyHoldTimeoutRef.current = setTimeout(function () {
+        keyHoldIntervalRef.current = setInterval(function () {
+          keyHoldStepsRef.current += 1;
+          const step = keyHoldStepsRef.current >= 7 ? 60 : keyHoldStepsRef.current >= 3 ? 30 : 10;
+          seekBy(dir * step);
+        }, 240);
+      }, 360);
+    };
 
     const onKeyDown = function (e) {
       if (externalPauseReason) return;
       const code = e.keyCode || e.which;
-      showOsd();
 
-      if (code === WEBOS_KEYS.PLAY) {
+      // 1. BACK / ESC: close drawer -> hide OSD details first -> exit video on next press
+      if (code === WEBOS_KEYS.BACK || code === WEBOS_KEYS.ESCAPE) {
         e.preventDefault();
-        if (videoRef.current) videoRef.current.play().catch(function () {});
-        showHudToast('▶ Playing');
-      } else if (code === WEBOS_KEYS.PAUSE) {
-        e.preventDefault();
-        if (videoRef.current) videoRef.current.pause();
-        showHudToast('⏸ Paused');
-      } else if (code === WEBOS_KEYS.MEDIA_PLAY_PAUSE || code === WEBOS_KEYS.SPACE) {
-        e.preventDefault();
-        togglePlayPause();
-      } else if (code === WEBOS_KEYS.REWIND) {
-        e.preventDefault();
-        keyRepeatCount = e.repeat ? keyRepeatCount + 1 : 0;
-        const step = keyRepeatCount >= 6 ? 60 : keyRepeatCount >= 2 ? 30 : 10;
-        seekBy(-step);
-      } else if (code === WEBOS_KEYS.FAST_FORWARD) {
-        e.preventDefault();
-        keyRepeatCount = e.repeat ? keyRepeatCount + 1 : 0;
-        const step = keyRepeatCount >= 6 ? 60 : keyRepeatCount >= 2 ? 30 : 10;
-        seekBy(step);
-      } else if (!osdVisible && code === WEBOS_KEYS.LEFT) {
-        e.preventDefault();
-        keyRepeatCount = e.repeat ? keyRepeatCount + 1 : 0;
-        const step = keyRepeatCount >= 6 ? 60 : keyRepeatCount >= 2 ? 30 : 10;
-        seekBy(-step);
-      } else if (!osdVisible && code === WEBOS_KEYS.RIGHT) {
-        e.preventDefault();
-        keyRepeatCount = e.repeat ? keyRepeatCount + 1 : 0;
-        const step = keyRepeatCount >= 6 ? 60 : keyRepeatCount >= 2 ? 30 : 10;
-        seekBy(step);
-      } else if (code === WEBOS_KEYS.STOP || code === WEBOS_KEYS.BACK || code === WEBOS_KEYS.ESCAPE) {
-        e.preventDefault();
+        e.stopPropagation();
+        stopKeyHoldSeek();
         if (openDrawer) {
           setOpenDrawer(null);
+        } else if (osdVisible) {
+          hideOsd();
         } else {
           onClose();
         }
-      } else if (code === WEBOS_KEYS.CH_UP || code === WEBOS_KEYS.PAGE_UP) {
+        return;
+      }
+
+      if (code === WEBOS_KEYS.STOP) {
         e.preventDefault();
+        e.stopPropagation();
+        stopKeyHoldSeek();
+        onClose();
+        return;
+      }
+
+      // 2. Dedicated media keys
+      if (code === WEBOS_KEYS.PLAY) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (videoRef.current) videoRef.current.play().catch(function () {});
+        showHudToast('▶ Playing');
+        showOsd(false);
+        return;
+      }
+      if (code === WEBOS_KEYS.PAUSE) {
+        e.preventDefault();
+        e.stopPropagation();
+        if (videoRef.current) videoRef.current.pause();
+        showHudToast('⏸ Paused');
+        showOsd(false);
+        return;
+      }
+      if (code === WEBOS_KEYS.MEDIA_PLAY_PAUSE || code === WEBOS_KEYS.SPACE) {
+        e.preventDefault();
+        e.stopPropagation();
+        togglePlayPause();
+        return;
+      }
+
+      // 3. Middle OK / Enter button: pause/play video directly unless user navigated to another OSD button
+      if (code === WEBOS_KEYS.OK) {
+        const osdEl = document.querySelector('.player-osd');
+        const active = document.activeElement;
+        const onOtherOsdButton =
+          osdVisible &&
+          osdNavModeRef.current &&
+          osdEl &&
+          active &&
+          active.tagName === 'BUTTON' &&
+          osdEl.contains(active) &&
+          active !== playPauseBtnRef.current;
+
+        if (!onOtherOsdButton) {
+          e.preventDefault();
+          e.stopPropagation();
+          togglePlayPause();
+          return;
+        }
+        showOsd(true);
+        return;
+      }
+
+      // 4. Rewind / Fast-Forward dedicated keys (always seek + long press keeps moving)
+      if (code === WEBOS_KEYS.REWIND || code === WEBOS_KEYS.FAST_FORWARD) {
+        e.preventDefault();
+        e.stopPropagation();
+        const dir = code === WEBOS_KEYS.FAST_FORWARD ? 1 : -1;
+        if (e.repeat && keyHoldDirRef.current === dir) return;
+        startArrowKeySeek(dir);
+        return;
+      }
+
+      // 5. Left / Right arrows: -10s / +10s & continuous long-press seek unless navigating OSD buttons
+      if (code === WEBOS_KEYS.LEFT || code === WEBOS_KEYS.RIGHT) {
+        const inButtonNav = osdVisible && osdNavModeRef.current;
+        if (!inButtonNav && item && item.type !== 'live') {
+          e.preventDefault();
+          e.stopPropagation();
+          const dir = code === WEBOS_KEYS.RIGHT ? 1 : -1;
+          if (e.repeat && keyHoldDirRef.current === dir) return;
+          startArrowKeySeek(dir);
+          return;
+        }
+        showOsd(true);
+        return;
+      }
+
+      // 6. Channel Up / Down
+      if (code === WEBOS_KEYS.CH_UP || code === WEBOS_KEYS.PAGE_UP) {
+        e.preventDefault();
+        e.stopPropagation();
         zapChannel(-1);
-      } else if (code === WEBOS_KEYS.CH_DOWN || code === WEBOS_KEYS.PAGE_DOWN) {
+        return;
+      }
+      if (code === WEBOS_KEYS.CH_DOWN || code === WEBOS_KEYS.PAGE_DOWN) {
         e.preventDefault();
+        e.stopPropagation();
         zapChannel(1);
-      } else if (!osdVisible && item && item.type === 'live' && (code === WEBOS_KEYS.UP || code === WEBOS_KEYS.DOWN)) {
-        e.preventDefault();
-        zapChannel(code === WEBOS_KEYS.UP ? -1 : 1);
+        return;
+      }
+
+      // 7. Up / Down arrows: zap on Live TV when OSD hidden, or enter OSD button navigation mode
+      if (code === WEBOS_KEYS.UP || code === WEBOS_KEYS.DOWN) {
+        if (!osdVisible && item && item.type === 'live') {
+          e.preventDefault();
+          e.stopPropagation();
+          zapChannel(code === WEBOS_KEYS.UP ? -1 : 1);
+          return;
+        }
+        if (!osdVisible || !osdNavModeRef.current) {
+          e.preventDefault();
+          e.stopPropagation();
+          showOsd(true);
+          return;
+        }
+        showOsd(true);
+        return;
+      }
+
+      showOsd(false);
+    };
+
+    const onKeyUp = function (e) {
+      const code = e.keyCode || e.which;
+      if (
+        code === WEBOS_KEYS.LEFT ||
+        code === WEBOS_KEYS.RIGHT ||
+        code === WEBOS_KEYS.REWIND ||
+        code === WEBOS_KEYS.FAST_FORWARD
+      ) {
+        stopKeyHoldSeek();
       }
     };
 
-    const onKeyUp = function () {
-      keyRepeatCount = 0;
-    };
-
-    window.addEventListener('keydown', onKeyDown);
-    window.addEventListener('keyup', onKeyUp);
+    window.addEventListener('keydown', onKeyDown, true);
+    window.addEventListener('keyup', onKeyUp, true);
+    window.addEventListener('blur', stopKeyHoldSeek);
     return function () {
-      window.removeEventListener('keydown', onKeyDown);
-      window.removeEventListener('keyup', onKeyUp);
+      stopKeyHoldSeek();
+      window.removeEventListener('keydown', onKeyDown, true);
+      window.removeEventListener('keyup', onKeyUp, true);
+      window.removeEventListener('blur', stopKeyHoldSeek);
     };
-  }, [externalPauseReason, osdVisible, openDrawer, item, showOsd, showHudToast, togglePlayPause, seekBy, zapChannel, onClose]);
+  }, [
+    externalPauseReason,
+    osdVisible,
+    openDrawer,
+    item,
+    showOsd,
+    hideOsd,
+    showHudToast,
+    togglePlayPause,
+    seekBy,
+    stopKeyHoldSeek,
+    zapChannel,
+    onClose,
+  ]);
+
+  const handleStageClick = function (e) {
+    let el = e && e.target;
+    while (el && el !== e.currentTarget) {
+      const tag = el.tagName ? el.tagName.toUpperCase() : '';
+      const cls = typeof el.className === 'string' ? el.className : '';
+      if (
+        tag === 'BUTTON' ||
+        cls.indexOf('player-progress-bar') !== -1 ||
+        cls.indexOf('player-drawer') !== -1
+      ) {
+        return;
+      }
+      el = el.parentNode;
+    }
+    togglePlayPause();
+  };
 
   const aspectMode = ASPECT_MODES[aspectIdx];
   const progressPct = duration > 0 ? Math.min(100, (currentTime / duration) * 100) : 0;
@@ -609,8 +783,8 @@ export default function VideoPlayer({
   return (
     <div
       className="fullscreen-overlay"
-      onMouseMove={showOsd}
-      onClick={showOsd}
+      onMouseMove={function () { showOsd(false); }}
+      onClick={handleStageClick}
       data-modal-scope="player"
     >
       {/* Centered Stage Box so 4:3, 16:9, Cinema 21:9, Fit, and Zoom reshape reliably in Chromium 53 */}

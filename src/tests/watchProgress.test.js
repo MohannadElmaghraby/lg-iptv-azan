@@ -2,6 +2,7 @@ import { describe, it, expect, beforeEach } from 'vitest';
 import {
   upsertWatchProgress,
   getWatchProgressById,
+  findWatchProgressForItem,
   isResumableProgress,
   removeWatchProgressById,
   clearAllWatchProgress,
@@ -92,5 +93,51 @@ describe('Continue Watching Resume & Remove Logic', () => {
     list = clearAllWatchProgress();
     expect(list.length).toBe(0);
     expect(loadWatchProgress().length).toBe(0);
+  });
+
+  it('finds saved progress for Xtream series containers, shifted M3U URLs, and titles from anywhere', () => {
+    let list = [];
+    list = upsertWatchProgress(list, {
+      id: 'xt_ep_501',
+      type: 'series',
+      title: 'Episode 4',
+      url: 'http://example.com/series/501.mp4',
+      seriesId: '88',
+      seriesTitle: 'My Arabic Series',
+      season: 2,
+      episode: 4,
+      currentTime: 620,
+      duration: 2400,
+    });
+    list = upsertWatchProgress(list, {
+      id: 'series_oldhash_10',
+      type: 'series',
+      title: 'Show S01 E02',
+      url: 'http://example.com/m3u/show_e02.mp4',
+      currentTime: 300,
+      duration: 1800,
+    });
+
+    // Opening Xtream Series container from Series tab / Search / Favorites
+    const matchedSeries = findWatchProgressForItem(list, {
+      id: 'xt_series_88',
+      type: 'series',
+      title: 'My Arabic Series',
+      seriesId: 88,
+      isSeriesContainer: true,
+    });
+    expect(matchedSeries).not.toBeNull();
+    expect(matchedSeries.id).toBe('xt_ep_501');
+    expect(matchedSeries.currentTime).toBe(620);
+
+    // Opening M3U episode whose playlist index shifted (different id, same URL)
+    const matchedM3u = findWatchProgressForItem(list, {
+      id: 'series_oldhash_99',
+      type: 'series',
+      title: 'Show S01 E02',
+      url: 'http://example.com/m3u/show_e02.mp4',
+    });
+    expect(matchedM3u).not.toBeNull();
+    expect(matchedM3u.currentTime).toBe(300);
   });
 });

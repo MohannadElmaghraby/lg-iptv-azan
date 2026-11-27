@@ -93,6 +93,63 @@ export function getWatchProgressById(list, id) {
   return null;
 }
 
+/**
+ * Find the most recent resumable watch progress entry for any Movie, Episode,
+ * or Xtream Series container regardless of where the user opened it from.
+ */
+export function findWatchProgressForItem(list, item) {
+  if (!Array.isArray(list) || list.length === 0 || !item) return null;
+
+  // 1. Exact item id match
+  for (let i = 0; i < list.length; i += 1) {
+    const w = list[i];
+    if (w && w.id === item.id && isResumableProgress(w)) return w;
+  }
+
+  // 2. Xtream Series container -> match most recently watched episode of this series
+  if (item.isSeriesContainer || item.seriesId) {
+    const targetSeriesId = item.seriesId ? String(item.seriesId) : '';
+    const targetTitle = (item.title || '').trim().toLowerCase();
+    for (let i = 0; i < list.length; i += 1) {
+      const w = list[i];
+      if (!w || !isResumableProgress(w)) continue;
+      if (targetSeriesId && w.seriesId && String(w.seriesId) === targetSeriesId) {
+        return w;
+      }
+      if (targetTitle && w.seriesTitle && w.seriesTitle.trim().toLowerCase() === targetTitle) {
+        return w;
+      }
+    }
+  }
+
+  // 3. Exact stream URL match (survives M3U playlist index shifts)
+  if (item.url) {
+    for (let i = 0; i < list.length; i += 1) {
+      const w = list[i];
+      if (w && w.url && w.url === item.url && isResumableProgress(w)) return w;
+    }
+  }
+
+  // 4. Same media type + exact title fallback (survives rotating M3U auth tokens)
+  if (item.title && item.type && item.type !== 'live') {
+    const targetTitle = item.title.trim().toLowerCase();
+    for (let i = 0; i < list.length; i += 1) {
+      const w = list[i];
+      if (
+        w &&
+        w.type === item.type &&
+        w.title &&
+        w.title.trim().toLowerCase() === targetTitle &&
+        isResumableProgress(w)
+      ) {
+        return w;
+      }
+    }
+  }
+
+  return null;
+}
+
 export function removeWatchProgressById(list, id) {
   const safeList = Array.isArray(list) ? list : [];
   const next = safeList.filter(function (item) { return item.id !== id; });

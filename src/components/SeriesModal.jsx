@@ -1,6 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { fetchXtreamSeriesEpisodes } from '../utils/xtreamClient.js';
-import { formatPlaybackTime } from '../utils/watchProgress.js';
+import { formatPlaybackTime, findWatchProgressForItem, isResumableProgress } from '../utils/watchProgress.js';
 
 export function ResumePromptModal({ entry, onResume, onStartOver, onClose }) {
   if (!entry) return null;
@@ -49,11 +49,20 @@ export function ResumePromptModal({ entry, onResume, onStartOver, onClose }) {
   );
 }
 
-export function SeriesModal({ seriesItem, xtreamCreds, watchProgress, onPlayEpisode, onClose }) {
+export function SeriesModal({
+  seriesItem,
+  xtreamCreds,
+  watchProgress,
+  onPlayEpisode,
+  onResumeEpisode,
+  onClose,
+}) {
   const [loading, setLoading] = useState(false);
   const [error, setError] = useState('');
   const [seasons, setSeasons] = useState({});
   const [activeSeason, setActiveSeason] = useState('');
+
+  const latestSaved = seriesItem ? findWatchProgressForItem(watchProgress, seriesItem) : null;
 
   useEffect(function () {
     if (!seriesItem || !seriesItem.isSeriesContainer) return;
@@ -66,7 +75,8 @@ export function SeriesModal({ seriesItem, xtreamCreds, watchProgress, onPlayEpis
         const map = data.episodesBySeason || {};
         setSeasons(map);
         const keys = Object.keys(map);
-        setActiveSeason(keys[0] || '');
+        const savedSeason = latestSaved && latestSaved.season ? String(latestSaved.season) : '';
+        setActiveSeason(savedSeason && map[savedSeason] ? savedSeason : (keys[0] || ''));
         setLoading(false);
       })
       .catch(function (err) {
@@ -97,6 +107,71 @@ export function SeriesModal({ seriesItem, xtreamCreds, watchProgress, onPlayEpis
           </button>
         </div>
 
+        {/* Always show Resume / Continue Watching banner when this series has saved progress */}
+        {latestSaved && (
+          <div
+            style={{
+              padding: '16px 20px',
+              marginBottom: 18,
+              borderRadius: 16,
+              backgroundColor: 'rgba(212, 175, 55, 0.14)',
+              border: '2px solid #f0c94d',
+              display: 'flex',
+              justifyContent: 'space-between',
+              alignItems: 'center',
+              flexWrap: 'wrap',
+            }}
+          >
+            <div style={{ marginRight: 16 }}>
+              <div style={{ fontSize: 13, color: '#f0c94d', fontWeight: 800, letterSpacing: '0.5px' }}>
+                CONTINUE WATCHING
+              </div>
+              <div style={{ fontSize: 20, fontWeight: 800, color: '#f5f7fa', marginTop: 2 }} dir="auto">
+                {latestSaved.season ? 'S' + latestSaved.season + ' ' : ''}
+                {latestSaved.episode ? 'E' + latestSaved.episode + ' — ' : ''}
+                {latestSaved.title}
+              </div>
+              <div style={{ fontSize: 14, color: '#cbd5e1', marginTop: 2 }}>
+                Watched up to {formatPlaybackTime(latestSaved.currentTime)}
+                {latestSaved.duration > 0 ? ' / ' + formatPlaybackTime(latestSaved.duration) : ''}
+              </div>
+            </div>
+
+            <div className="btn-row" style={{ marginBottom: 0 }}>
+              <button
+                type="button"
+                data-focusable="true"
+                className="tv-btn primary"
+                style={{ marginBottom: 0 }}
+                onClick={function () {
+                  if (onResumeEpisode) {
+                    onResumeEpisode(latestSaved, latestSaved.currentTime || 0);
+                  } else {
+                    onPlayEpisode(latestSaved);
+                  }
+                }}
+              >
+                ▶ Resume from {formatPlaybackTime(latestSaved.currentTime)}
+              </button>
+              <button
+                type="button"
+                data-focusable="true"
+                className="tv-btn small"
+                style={{ marginBottom: 0 }}
+                onClick={function () {
+                  if (onResumeEpisode) {
+                    onResumeEpisode(latestSaved, 0);
+                  } else {
+                    onPlayEpisode(latestSaved);
+                  }
+                }}
+              >
+                ↺ Start Over
+              </button>
+            </div>
+          </div>
+        )}
+
         {seriesItem.plot && (
           <p style={{ fontSize: 15, color: '#cbd5e1', lineHeight: 1.5, marginBottom: 18 }} dir="auto">
             {seriesItem.plot}
@@ -124,9 +199,11 @@ export function SeriesModal({ seriesItem, xtreamCreds, watchProgress, onPlayEpis
               })}
             </div>
 
-            <div style={{ maxHeight: 360, overflowY: 'auto' }}>
+            <div style={{ maxHeight: 340, overflowY: 'auto' }}>
               {episodes.map(function (ep) {
-                const saved = (watchProgress || []).find(function (w) { return w.id === ep.id; });
+                const saved = (watchProgress || []).find(function (w) {
+                  return isResumableProgress(w) && (w.id === ep.id || (w.url && ep.url && w.url === ep.url));
+                });
                 return (
                   <button
                     key={ep.id}
@@ -152,7 +229,7 @@ export function SeriesModal({ seriesItem, xtreamCreds, watchProgress, onPlayEpis
                       E{ep.episode} — {ep.title}
                     </span>
                     <span style={{ fontSize: 14, color: '#f0c94d' }}>
-                      {saved ? 'Resume ' + formatPlaybackTime(saved.currentTime) : (ep.duration || '▶ Play')}
+                      {saved ? '▶ Resume ' + formatPlaybackTime(saved.currentTime) : (ep.duration || '▶ Play')}
                     </span>
                   </button>
                 );

@@ -3,6 +3,7 @@ import MediaCard from './MediaCard.jsx';
 import TvKeyboard from './TvKeyboard.jsx';
 import { isFavoriteItem } from '../utils/favorites.js';
 import { prepareSearchIndex, searchCatalog } from '../utils/search.js';
+import { findWatchProgressForItem } from '../utils/watchProgress.js';
 
 const PAGE_SIZE = 36;
 
@@ -258,15 +259,25 @@ export default function CategoryView({
           <div className="cards-grid">
             {visibleSlice.map(function (item) {
               const isContinue = selectedMenu === 'CONTINUE';
+              const savedProg = !isContinue && categoryType !== 'live'
+                ? findWatchProgressForItem(continueWatching, item)
+                : null;
+              const cardItem = savedProg
+                ? Object.assign({}, item, {
+                    currentTime: savedProg.currentTime,
+                    duration: savedProg.duration,
+                    progressPercent: savedProg.progressPercent,
+                  })
+                : item;
               return (
                 <MediaCard
                   key={item.id}
-                  item={item}
+                  item={cardItem}
                   isFavorite={isFavoriteItem(favorites, item.id)}
                   onSelect={isContinue ? onResumeItem : onSelectItem}
                   onToggleFavorite={onToggleFavorite}
                   onRemoveProgress={isContinue ? onRemoveContinueItem : null}
-                  showProgress={isContinue}
+                  showProgress={isContinue || Boolean(savedProg)}
                 />
               );
             })}
