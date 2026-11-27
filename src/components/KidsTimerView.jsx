@@ -1,6 +1,10 @@
-import React, { useState } from 'react';
+import React, { useState, useEffect } from 'react';
 import { KIDS_LEARNING_LESSONS, KIDS_PLAYLIST_PRESETS } from '../data/kidsLessons.js';
 import { formatPlaybackTime } from '../utils/watchProgress.js';
+import { speakAsserAndEyadGreeting } from '../utils/kidsGreeting.js';
+import { readStorage, writeStorage } from '../utils/storage.js';
+
+const AUTO_GREET_KEY = 'kids_auto_greet_v1';
 
 const TIMER_PRESETS = [
   { label: '15 Min', seconds: 15 * 60 },
@@ -22,6 +26,27 @@ export default function KidsTimerView({
 }) {
   const [newPin, setNewPin] = useState(parentPin || '0000');
   const [pinMsg, setPinMsg] = useState('');
+  const [autoGreet, setAutoGreet] = useState(function () {
+    return readStorage(AUTO_GREET_KEY, true);
+  });
+  const [greetPulseKey, setGreetPulseKey] = useState(1);
+
+  useEffect(function () {
+    if (autoGreet) {
+      speakAsserAndEyadGreeting();
+    }
+  }, []);
+
+  const handleReplayGreeting = function () {
+    setGreetPulseKey(function (k) { return k + 1; });
+    speakAsserAndEyadGreeting();
+  };
+
+  const handleToggleAutoGreet = function () {
+    const next = !autoGreet;
+    setAutoGreet(next);
+    writeStorage(AUTO_GREET_KEY, next);
+  };
 
   const handleSavePin = function () {
     const cleaned = (newPin || '').replace(/\D/g, '').slice(0, 4);
@@ -37,33 +62,59 @@ export default function KidsTimerView({
 
   return (
     <div>
-      {/* Header Banner for Asser & Eyad */}
-      <div className="panel" style={{ borderColor: 'rgba(56, 189, 248, 0.35)' }}>
+      {/* Fun Welcome & Salam Greeting Banner for Asser & Eyad */}
+      <div className="panel kids-greet-panel">
         <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
-          <div>
-            <h3 style={{ fontSize: 26, margin: '0 0 6px 0', color: '#38bdf8' }}>
-              🧸 Kids Corner &amp; Watch Timer — Asser &amp; Eyad (<span dir="rtl">آسر وإياد</span>)
-            </h3>
-            <div style={{ fontSize: 16, color: '#98a2b3' }}>
-              Set a screen-time limit with Parent PIN protection and explore Ages 3–4 English learning lessons.
+          <div style={{ display: 'flex', alignItems: 'center' }}>
+            <span key={greetPulseKey} className="kids-greet-emoji" aria-hidden="true">👋</span>
+            <div>
+              <div style={{ fontSize: 30, fontWeight: 800, color: '#f0c94d', marginBottom: 4 }} dir="rtl">
+                السلام عليكم يا آسر ويا إياد! ✨
+              </div>
+              <h3 style={{ fontSize: 24, margin: '0 0 6px 0', color: '#38bdf8' }}>
+                Hi Asser! Hi Eyad! Ready for fun &amp; learning? 🧸🚀
+              </h3>
+              <div>
+                <span className="kids-name-badge">🦁 Hi Asser • <span dir="rtl" style={{ marginLeft: 4 }}>آسر</span></span>
+                <span className="kids-name-badge sky">🚀 Hi Eyad • <span dir="rtl" style={{ marginLeft: 4 }}>إياد</span></span>
+              </div>
             </div>
           </div>
 
-          {kidsTimer.active && (
-            <div
-              style={{
-                padding: '10px 20px',
-                borderRadius: 14,
-                backgroundColor: 'rgba(56, 189, 248, 0.14)',
-                border: '2px solid #38bdf8',
-                fontSize: 22,
-                fontWeight: 800,
-                color: '#bae6fd',
-              }}
+          <div className="btn-row" style={{ alignItems: 'center' }}>
+            <button
+              type="button"
+              data-focusable="true"
+              className="tv-btn primary"
+              onClick={handleReplayGreeting}
             >
-              ⏱ {formatPlaybackTime(kidsTimer.remainingSeconds)} left
-            </div>
-          )}
+              🔊 Say Salam &amp; Hi!
+            </button>
+            <button
+              type="button"
+              data-focusable="true"
+              className={'tv-btn small' + (autoGreet ? ' emerald' : '')}
+              onClick={handleToggleAutoGreet}
+            >
+              {autoGreet ? '🔔 Auto-Greet: ON' : '🔕 Auto-Greet: OFF'}
+            </button>
+            {kidsTimer.active && (
+              <div
+                style={{
+                  padding: '10px 20px',
+                  marginBottom: 10,
+                  borderRadius: 14,
+                  backgroundColor: 'rgba(56, 189, 248, 0.14)',
+                  border: '2px solid #38bdf8',
+                  fontSize: 20,
+                  fontWeight: 800,
+                  color: '#bae6fd',
+                }}
+              >
+                ⏱ {formatPlaybackTime(kidsTimer.remainingSeconds)} left
+              </div>
+            )}
+          </div>
         </div>
       </div>
 

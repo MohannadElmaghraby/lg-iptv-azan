@@ -840,3 +840,52 @@ select {
   background: #232a38;
   border-radius: 4px;
 }
+
+/* Kids Salam Greeting Card (Chromium 53 compatible) */
+@-webkit-keyframes kidsBounce {
+  0% { -webkit-transform: translateY(0px) scale(1); transform: translateY(0px) scale(1); }
+  40% { -webkit-transform: translateY(-6px) scale(1.06); transform: translateY(-6px) scale(1.06); }
+  70% { -webkit-transform: translateY(2px) scale(0.98); transform: translateY(2px) scale(0.98); }
+  100% { -webkit-transform: translateY(0px) scale(1); transform: translateY(0px) scale(1); }
+}
+
+@keyframes kidsBounce {
+  0% { transform: translateY(0px) scale(1); }
+  40% { transform: translateY(-6px) scale(1.06); }
+  70% { transform: translateY(2px) scale(0.98); }
+  100% { transform: translateY(0px) scale(1); }
+}
+
+.kids-greet-panel {
+  border: 2px solid rgba(56, 189, 248, 0.48);
+  background: linear-gradient(135deg, rgba(16, 26, 44, 0.96) 0%, rgba(11, 14, 22, 0.98) 100%);
+}
+
+.kids-greet-emoji {
+  display: inline-block;
+  font-size: 46px;
+  margin-right: 16px;
+  -webkit-animation: kidsBounce 1.1s ease;
+  animation: kidsBounce 1.1s ease;
+}
+
+.kids-name-badge {
+  display: inline-flex;
+  align-items: center;
+  padding: 7px 15px;
+  margin-right: 10px;
+  margin-top: 8px;
+  border-radius: 999px;
+  font-size: 16px;
+  font-weight: 800;
+  border: 2px solid rgba(240, 201, 77, 0.45);
+  background-color: rgba(212, 175, 55, 0.12);
+  color: #f7dc7a;
+}
+
+.kids-name-badge.sky {
+  border-color: rgba(56, 189, 248, 0.5);
+  background-color: rgba(56, 189, 248, 0.14);
+  color: #bae6fd;
+}
+
