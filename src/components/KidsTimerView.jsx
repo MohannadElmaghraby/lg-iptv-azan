@@ -1,0 +1,196 @@
+import React, { useState } from 'react';
+import { KIDS_LEARNING_LESSONS, KIDS_PLAYLIST_PRESETS } from '../data/kidsLessons.js';
+import { formatPlaybackTime } from '../utils/watchProgress.js';
+
+const TIMER_PRESETS = [
+  { label: '15 Min', seconds: 15 * 60 },
+  { label: '30 Min', seconds: 30 * 60 },
+  { label: '45 Min', seconds: 45 * 60 },
+  { label: '60 Min', seconds: 60 * 60 },
+  { label: '10s Test', seconds: 10 },
+];
+
+export default function KidsTimerView({
+  kidsTimer,
+  parentPin,
+  onStartTimer,
+  onStopTimer,
+  onChangePin,
+  onStartLesson,
+  onLoadKidsM3u,
+  loadingM3u,
+}) {
+  const [newPin, setNewPin] = useState(parentPin || '0000');
+  const [pinMsg, setPinMsg] = useState('');
+
+  const handleSavePin = function () {
+    const cleaned = (newPin || '').replace(/\D/g, '').slice(0, 4);
+    if (cleaned.length !== 4) {
+      setPinMsg('PIN must be exactly 4 digits.');
+      return;
+    }
+    onChangePin(cleaned);
+    setNewPin(cleaned);
+    setPinMsg('Parent PIN updated.');
+    setTimeout(function () { setPinMsg(''); }, 2500);
+  };
+
+  return (
+    <div>
+      {/* Header Banner for Asser & Eyad */}
+      <div className="panel" style={{ borderColor: 'rgba(56, 189, 248, 0.35)' }}>
+        <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
+          <div>
+            <h3 style={{ fontSize: 26, margin: '0 0 6px 0', color: '#38bdf8' }}>
+              🧸 Kids Corner &amp; Watch Timer — Asser &amp; Eyad (<span dir="rtl">آسر وإياد</span>)
+            </h3>
+            <div style={{ fontSize: 16, color: '#98a2b3' }}>
+              Set a screen-time limit with Parent PIN protection and explore Ages 3–4 English learning lessons.
+            </div>
+          </div>
+
+          {kidsTimer.active && (
+            <div
+              style={{
+                padding: '10px 20px',
+                borderRadius: 14,
+                backgroundColor: 'rgba(56, 189, 248, 0.14)',
+                border: '2px solid #38bdf8',
+                fontSize: 22,
+                fontWeight: 800,
+                color: '#bae6fd',
+              }}
+            >
+              ⏱ {formatPlaybackTime(kidsTimer.remainingSeconds)} left
+            </div>
+          )}
+        </div>
+      </div>
+
+      {/* Screen-Time Limit & Parent PIN */}
+      <div className="panel">
+        <div className="section-header" style={{ marginBottom: 14 }}>
+          <div>
+            <h3 className="section-title">Watch Timer &amp; Parent PIN</h3>
+            <div className="section-subtitle">
+              When the timer reaches 00:00, any playing video pauses automatically until the Parent PIN (default 0000) is entered.
+            </div>
+          </div>
+          {kidsTimer.active && (
+            <button type="button" data-focusable="true" className="tv-btn small danger" onClick={onStopTimer}>
+              Stop Timer
+            </button>
+          )}
+        </div>
+
+        <div className="btn-row" style={{ marginBottom: 18 }}>
+          {TIMER_PRESETS.map(function (p) {
+            return (
+              <button
+                key={p.label}
+                type="button"
+                data-focusable="true"
+                className={'tv-btn' + (p.seconds === 10 ? '' : ' primary')}
+                onClick={function () { onStartTimer(p.seconds); }}
+              >
+                ⏱ Start {p.label}
+              </button>
+            );
+          })}
+        </div>
+
+        <div className="form-row" style={{ alignItems: 'flex-end', marginBottom: 0 }}>
+          <div className="form-field" style={{ maxWidth: 260, marginBottom: 0 }}>
+            <label className="form-label">4-Digit Parent PIN</label>
+            <input
+              type="password"
+              maxLength={4}
+              data-focusable="true"
+              className="tv-input"
+              value={newPin}
+              onChange={function (e) { setNewPin(e.target.value.replace(/\D/g, '').slice(0, 4)); }}
+            />
+          </div>
+          <button type="button" data-focusable="true" className="tv-btn" style={{ marginBottom: 0 }} onClick={handleSavePin}>
+            Save Parent PIN
+          </button>
+          {pinMsg && (
+            <span style={{ marginLeft: 14, color: '#6ee7b7', fontSize: 15, fontWeight: 700 }}>{pinMsg}</span>
+          )}
+        </div>
+      </div>
+
+      {/* Built-in Ages 3-4 English Learning Videos */}
+      <div className="section-header">
+        <div>
+          <h3 className="section-title">🎓 Ages 3–4 English Learning (Built-In Offline)</h3>
+          <div className="section-subtitle">
+            Interactive animated lessons with voice narration for Asser &amp; Eyad — works 100% offline on LG webOS 4.0
+          </div>
+        </div>
+      </div>
+
+      <div className="cards-grid" style={{ marginBottom: 24 }}>
+        {KIDS_LEARNING_LESSONS.map(function (lesson) {
+          return (
+            <div className="media-card-wrap" key={lesson.id} style={{ width: 280 }}>
+              <button
+                type="button"
+                data-focusable="true"
+                className="media-card"
+                onClick={function () { onStartLesson(lesson); }}
+              >
+                <div
+                  className="media-thumb"
+                  style={{
+                    height: 136,
+                    backgroundColor: '#090e18',
+                    borderBottom: '2px solid ' + lesson.accent,
+                  }}
+                >
+                  <span style={{ fontSize: 54 }}>
+                    {lesson.slides[0] && (lesson.slides[0].visual || '🔷')}
+                  </span>
+                  <span className="media-type-badge" style={{ color: lesson.accent, borderColor: lesson.accent }}>
+                    AGES 3–4
+                  </span>
+                </div>
+                <div className="media-card-body">
+                  <div className="media-title">{lesson.title}</div>
+                  <div className="media-group" dir="rtl" style={{ color: '#cbd5e1', marginBottom: 4 }}>
+                    {lesson.arTitle}
+                  </div>
+                  <div className="media-group">{lesson.slides.length} interactive cards</div>
+                </div>
+              </button>
+            </div>
+          );
+        })}
+      </div>
+
+      {/* One-Click Free Public Kids & Education M3U Loaders */}
+      <div className="panel">
+        <h3 className="section-title" style={{ marginBottom: 8 }}>Free Public Kids &amp; Education Channels (iptv-org)</h3>
+        <div className="section-subtitle" style={{ marginBottom: 16 }}>
+          One-click loader for open-access public IPTV streams — loads directly into your Live TV catalog.
+        </div>
+        <div className="btn-row">
+          {KIDS_PLAYLIST_PRESETS.map(function (preset) {
+            return (
+              <button
+                key={preset.id}
+                type="button"
+                data-focusable="true"
+                className="tv-btn emerald"
+                disabled={loadingM3u}
+                onClick={function () { onLoadKidsM3u(preset.url, preset.title); }}
+              >
+                {loadingM3u ? 'Loading...' : '▶ Load ' + preset.title}
+              </button>
+            );
+          })}
+        </div>
+      </div>
+    </div>
+  );
+}

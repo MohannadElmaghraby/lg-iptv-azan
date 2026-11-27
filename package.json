@@ -1,0 +1,31 @@
+{
+  "name": "asyad-tv",
+  "version": "1.0.0",
+  "description": "Asyad TV (أسياد TV) - Fast OLED-friendly 10-foot IPTV, Kids Learning & Offline Arabic Azan web app for LG webOS 4.0",
+  "private": true,
+  "type": "module",
+  "scripts": {
+    "dev": "vite",
+    "build": "vite build",
+    "preview": "vite preview",
+    "test": "vitest run"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/MohannadElmaghraby/lg-iptv-azan.git"
+  },
+  "dependencies": {
+    "adhan": "^4.4.3",
+    "hls.js": "^1.5.17",
+    "react": "^18.3.1",
+    "react-dom": "^18.3.1"
+  },
+  "devDependencies": {
+    "@vitejs/plugin-legacy": "^5.4.3",
+    "@vitejs/plugin-react": "^4.3.4",
+    "jsdom": "^25.0.1",
+    "terser": "^5.36.0",
+    "vite": "^5.4.11",
+    "vitest": "^2.1.8"
+  }
+}

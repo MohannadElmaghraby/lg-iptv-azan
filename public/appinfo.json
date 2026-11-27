@@ -1,0 +1,16 @@
+{
+  "id": "com.family.asyadtv",
+  "version": "1.0.0",
+  "vendor": "Asyad Family",
+  "type": "web",
+  "main": "index.html",
+  "title": "Asyad TV",
+  "icon": "icon.png",
+  "largeIcon": "largeIcon.png",
+  "bgColor": "#050608",
+  "iconColor": "#d4af37",
+  "resolution": "1920x1080",
+  "handlesRelaunch": true,
+  "disableBackHistoryAPI": true,
+  "transparent": false
+}
