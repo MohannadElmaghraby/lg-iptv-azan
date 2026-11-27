@@ -11,7 +11,7 @@ import {
 import { findWatchProgressForItem } from '../utils/watchProgress.js';
 import { readStorage, writeStorage } from '../utils/storage.js';
 
-const PAGE_SIZE = 24;
+const PAGE_SIZE = 25;
 const INITIAL_GROUP_LIMIT = 50;
 const SORT_PREFS_KEY = 'category_sort_v1';
 
