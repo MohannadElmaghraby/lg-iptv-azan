@@ -492,7 +492,7 @@ export default function App() {
       : null;
 
   const activeNavObj = NAV_ITEMS.find(function (n) { return n.id === activeTab; });
-  const pageTitle = activeTab === 'home' ? 'Asyad TV v1.3.4' : (activeNavObj ? activeNavObj.label : 'Asyad TV');
+  const pageTitle = activeTab === 'home' ? 'Asyad TV v1.3.5' : (activeNavObj ? activeNavObj.label : 'Asyad TV');
 
   const sourceLabel = sourceConfig
     ? (sourceConfig.label || 'Playlist Active') + ' (' + catalog.items.length.toLocaleString() + ')'
