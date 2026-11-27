@@ -1,0 +1,52 @@
+name: Release LG webOS IPK
+
+on:
+  push:
+    tags:
+      - 'v*'
+  workflow_dispatch:
+    inputs:
+      tag:
+        description: 'Release tag (e.g. v1.0.0)'
+        required: true
+        default: 'v1.0.0'
+
+permissions:
+  contents: write
+
+jobs:
+  build-ipk:
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v4
+
+      - name: Setup Node.js 22
+        uses: actions/setup-node@v4
+        with:
+          node-version: '22'
+          cache: 'npm'
+
+      - name: Install dependencies
+        run: npm ci
+
+      - name: Run unit tests
+        run: npm test
+
+      - name: Build production webOS bundle
+        run: npm run build
+
+      - name: Package LG webOS IPK
+        run: npx ares-package --no-minify dist -o .
+
+      - name: Verify generated IPK
+        run: ls -lh *.ipk
+
+      - name: Upload IPK to GitHub Release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ github.event.inputs.tag || github.ref_name }}
+          name: Asyad TV ${{ github.event.inputs.tag || github.ref_name }}
+          generate_release_notes: true
+          files: |
+            *.ipk

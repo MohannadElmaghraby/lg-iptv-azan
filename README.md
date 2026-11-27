@@ -52,14 +52,41 @@ public/audio/azan.mp3
 
 ---
 
+## Adding Your IPTV Provider (URL, Username & Password)
+
+Your credentials stay **100% private on your LG TV** (`localStorage`) — never committed to GitHub.
+
+1. Open **Asyad TV** on your TV and go to **⚙ Sources & Setup**.
+2. Keep **✓ output=ts → m3u8: ON** (recommended for LG webOS 4.0).
+3. Choose either method your provider gave you:
+   - **Option A — Xtream Codes API (Recommended if you have Server URL + Username + Password):**
+     - **Server URL:** e.g. `http://your-provider-host:8080`
+     - **Username:** your username
+     - **Password:** your password
+     - Click **Connect & Save Xtream Codes** (loads Live TV, Movies, Series, and EPG).
+   - **Option B — M3U / M3U_Plus URL:**
+     - Paste your full URL, e.g. `http://your-provider-host/get.php?username=YOUR_USER&password=YOUR_PASS&type=m3u_plus&output=ts`
+     - Click **Load & Save M3U URL**.
+4. Next time you open **Asyad TV**, your channels, movies, and series auto-load on startup.
+
+---
+
 ## Development & Testing
 
 ```bash
 npm install
-npm test        # Runs Vitest unit tests (M3U parser, Arabic/English search, Continue Watching, Azan)
-npm run build   # Builds production bundle + Chrome 53 legacy chunks into dist/
-npm run dev     # Starts local dev server
+npm test          # Runs Vitest unit tests (M3U parser, Arabic/English search, Continue Watching, Azan)
+npm run build     # Builds production bundle + Chrome 53 legacy chunks into dist/
+npm run package:ipk  # Builds dist/ and packages com.family.asyadtv_<version>_all.ipk
+npm run dev       # Starts local dev server
 ```
+
+---
+
+## Releases & Downloading the `.ipk`
+
+- Pre-built `.ipk` packages are published under **GitHub Releases** (`v1.0.0` and newer).
+- Pushing a version tag (`git tag v1.0.1 && git push origin v1.0.1`) automatically triggers `.github/workflows/release.yml` to test, build, package the `.ipk`, and attach it to a new GitHub Release.
 
 ---
 
@@ -86,12 +113,17 @@ ares-novacom --device lgtv --getkey
 ```
 Enter the 6-character **Passphrase** shown in the TV's Developer Mode app.
 
-### 4. Build, Package (`.ipk`), Install & Launch
+### 4. Install & Launch the `.ipk` (Download from Releases or Build Locally)
+If building locally:
 ```bash
 npm run build
-ares-package dist -o .
+ares-package --no-minify dist -o .
+```
+Then install and launch on your LG TV:
+```bash
 ares-install --device lgtv com.family.asyadtv_1.0.0_all.ipk
 ares-launch --device lgtv com.family.asyadtv
 ```
 
 > **Tip:** To prevent Developer Mode from expiring after 50 hours, remember to renew the session inside the Developer Mode app on your TV, or launch **Asyad TV** from the LG Home Launcher anytime!
+
