@@ -31,6 +31,8 @@ export default function VideoPlayer({
   const hudTimerRef = useRef(null);
   const holdIntervalRef = useRef(null);
   const holdStepCountRef = useRef(0);
+  const didMouseDownRef = useRef(false);
+  const playPauseBtnRef = useRef(null);
   const wasPlayingRef = useRef(false);
   const prevPauseReasonRef = useRef(null);
   const initialSeekDoneRef = useRef(false);
@@ -73,6 +75,14 @@ export default function VideoPlayer({
       setOsdVisible(false);
       setOpenDrawer(null);
     }, 5000);
+    setTimeout(function () {
+      const osdEl = document.querySelector('.player-osd');
+      if (osdEl && (!document.activeElement || !osdEl.contains(document.activeElement))) {
+        if (playPauseBtnRef.current) {
+          try { playPauseBtnRef.current.focus(); } catch (e) { /* ignore */ }
+        }
+      }
+    }, 20);
   }, []);
 
   const stopHoldSeek = useCallback(function () {
@@ -899,11 +909,24 @@ export default function VideoPlayer({
                   type="button"
                   data-focusable="true"
                   className="tv-btn small"
-                  onMouseDown={function () { startHoldSeek(-1); }}
+                  onMouseDown={function () {
+                    didMouseDownRef.current = true;
+                    startHoldSeek(-1);
+                  }}
                   onMouseUp={stopHoldSeek}
                   onMouseLeave={stopHoldSeek}
-                  onTouchStart={function () { startHoldSeek(-1); }}
+                  onTouchStart={function () {
+                    didMouseDownRef.current = true;
+                    startHoldSeek(-1);
+                  }}
                   onTouchEnd={stopHoldSeek}
+                  onClick={function () {
+                    if (didMouseDownRef.current) {
+                      didMouseDownRef.current = false;
+                      return;
+                    }
+                    seekBy(-10);
+                  }}
                   onKeyDown={function (e) {
                     if ((e.keyCode || e.which) === WEBOS_KEYS.OK) {
                       e.preventDefault();
@@ -915,6 +938,7 @@ export default function VideoPlayer({
                 </button>
 
                 <button
+                  ref={playPauseBtnRef}
                   type="button"
                   data-focusable="true"
                   className="tv-btn primary small"
@@ -927,11 +951,24 @@ export default function VideoPlayer({
                   type="button"
                   data-focusable="true"
                   className="tv-btn small"
-                  onMouseDown={function () { startHoldSeek(1); }}
+                  onMouseDown={function () {
+                    didMouseDownRef.current = true;
+                    startHoldSeek(1);
+                  }}
                   onMouseUp={stopHoldSeek}
                   onMouseLeave={stopHoldSeek}
-                  onTouchStart={function () { startHoldSeek(1); }}
+                  onTouchStart={function () {
+                    didMouseDownRef.current = true;
+                    startHoldSeek(1);
+                  }}
                   onTouchEnd={stopHoldSeek}
+                  onClick={function () {
+                    if (didMouseDownRef.current) {
+                      didMouseDownRef.current = false;
+                      return;
+                    }
+                    seekBy(10);
+                  }}
                   onKeyDown={function (e) {
                     if ((e.keyCode || e.which) === WEBOS_KEYS.OK) {
                       e.preventDefault();

@@ -20,6 +20,18 @@ const EMOJI_SVG_MAP = {
   '🐦': 'bird',
   '🐟': 'fish',
   '🐑': 'sheep',
+  '🍪': 'cookie',
+  '🏆': 'trophy',
+  '🦋': 'butterfly',
+  '🍌': 'banana',
+  '🍉': 'watermelon',
+  '🥭': 'mango',
+  '🍇': 'grapes',
+  '🥕': 'carrot',
+  '🥛': 'milk',
+  '🎁': 'gift',
+  '☀️': 'sun',
+  '🌙': 'moon',
 };
 
 export function mapVisualToKind(visual) {
@@ -273,6 +285,134 @@ export default function KidsIllustration({ kind, size = 100 }) {
           <ellipse cx="50" cy="54" rx="17" ry="19" fill="#334155" />
           <circle cx="43" cy="50" r="3" fill="#ffffff" />
           <circle cx="57" cy="50" r="3" fill="#ffffff" />
+        </svg>
+      );
+
+    case 'cookie':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="38" fill="#d97706" stroke="#92400e" strokeWidth="4" />
+          <circle cx="36" cy="38" r="5" fill="#451a03" />
+          <circle cx="60" cy="34" r="4.5" fill="#451a03" />
+          <circle cx="48" cy="54" r="5.5" fill="#451a03" />
+          <circle cx="65" cy="60" r="5" fill="#451a03" />
+          <circle cx="34" cy="65" r="4.5" fill="#451a03" />
+        </svg>
+      );
+
+    case 'trophy':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M26 22 L74 22 L70 52 C68 64 59 70 50 70 C41 70 32 64 30 52 Z" fill="#facc15" stroke="#ca8a04" strokeWidth="3" />
+          <path d="M26 28 C14 28 14 48 28 48" fill="none" stroke="#eab308" strokeWidth="5" />
+          <path d="M74 28 C86 28 86 48 72 48" fill="none" stroke="#eab308" strokeWidth="5" />
+          <rect x="44" y="70" width="12" height="14" fill="#eab308" />
+          <rect x="30" y="83" width="40" height="9" rx="4" fill="#b45309" />
+        </svg>
+      );
+
+    case 'butterfly':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <ellipse cx="32" cy="38" rx="20" ry="16" transform="rotate(-20 32 38)" fill="#a855f7" />
+          <ellipse cx="68" cy="38" rx="20" ry="16" transform="rotate(20 68 38)" fill="#a855f7" />
+          <ellipse cx="34" cy="64" rx="16" ry="14" transform="rotate(15 34 64)" fill="#ec4899" />
+          <ellipse cx="66" cy="64" rx="16" ry="14" transform="rotate(-15 66 64)" fill="#ec4899" />
+          <rect x="46" y="28" width="8" height="48" rx="4" fill="#1e293b" />
+          <path d="M48 28 Q40 14 34 16 M52 28 Q60 14 66 16" fill="none" stroke="#cbd5e1" strokeWidth="3" strokeLinecap="round" />
+        </svg>
+      );
+
+    case 'banana':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M20 72 C38 82 72 68 80 22 C84 36 82 76 48 86 C34 90 22 82 20 72 Z" fill="#facc15" stroke="#eab308" strokeWidth="3" />
+          <rect x="76" y="18" width="6" height="9" rx="2" fill="#78350f" />
+        </svg>
+      );
+
+    case 'watermelon':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M12 42 A38 38 0 0 0 88 42 Z" fill="#16a34a" />
+          <path d="M18 42 A32 32 0 0 0 82 42 Z" fill="#ef4444" />
+          <circle cx="36" cy="54" r="2.5" fill="#1e293b" />
+          <circle cx="50" cy="60" r="2.5" fill="#1e293b" />
+          <circle cx="64" cy="54" r="2.5" fill="#1e293b" />
+        </svg>
+      );
+
+    case 'mango':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <ellipse cx="52" cy="54" rx="26" ry="34" transform="rotate(24 52 54)" fill="#f59e0b" />
+          <ellipse cx="58" cy="20" rx="11" ry="5" transform="rotate(-25 58 20)" fill="#22c55e" />
+        </svg>
+      );
+
+    case 'grapes':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M50 12 L50 26" stroke="#78350f" strokeWidth="4" strokeLinecap="round" />
+          <circle cx="38" cy="38" r="12" fill="#9333ea" />
+          <circle cx="62" cy="38" r="12" fill="#a855f7" />
+          <circle cx="32" cy="56" r="12" fill="#a855f7" />
+          <circle cx="50" cy="56" r="12" fill="#9333ea" />
+          <circle cx="68" cy="56" r="12" fill="#a855f7" />
+          <circle cx="42" cy="74" r="12" fill="#9333ea" />
+          <circle cx="58" cy="74" r="12" fill="#7e22ce" />
+        </svg>
+      );
+
+    case 'carrot':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M46 28 Q36 10 44 12 M50 28 Q50 8 56 12 M54 28 Q64 12 60 22" fill="none" stroke="#22c55e" strokeWidth="5" strokeLinecap="round" />
+          <path d="M32 32 C32 24 68 24 68 32 L54 88 C52 92 48 92 46 88 Z" fill="#f97316" />
+        </svg>
+      );
+
+    case 'milk':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <rect x="28" y="24" width="44" height="64" rx="8" fill="#f8fafc" stroke="#94a3b8" strokeWidth="3" />
+          <rect x="34" y="12" width="32" height="14" rx="4" fill="#38bdf8" />
+          <rect x="32" y="46" width="36" height="22" rx="4" fill="#bae6fd" />
+        </svg>
+      );
+
+    case 'gift':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <rect x="18" y="38" width="64" height="50" rx="8" fill="#ef4444" />
+          <rect x="14" y="28" width="72" height="16" rx="5" fill="#f87171" />
+          <rect x="44" y="28" width="12" height="60" fill="#facc15" />
+          <circle cx="40" cy="22" r="9" fill="none" stroke="#facc15" strokeWidth="5" />
+          <circle cx="60" cy="22" r="9" fill="none" stroke="#facc15" strokeWidth="5" />
+        </svg>
+      );
+
+    case 'sun':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <circle cx="50" cy="50" r="24" fill="#facc15" />
+          <g stroke="#f59e0b" strokeWidth="5" strokeLinecap="round">
+            <line x1="50" y1="8" x2="50" y2="18" />
+            <line x1="50" y1="82" x2="50" y2="92" />
+            <line x1="8" y1="50" x2="18" y2="50" />
+            <line x1="82" y1="50" x2="92" y2="50" />
+            <line x1="20" y1="20" x2="28" y2="28" />
+            <line x1="72" y1="72" x2="80" y2="80" />
+            <line x1="80" y1="20" x2="72" y2="28" />
+            <line x1="28" y1="72" x2="20" y2="80" />
+          </g>
+        </svg>
+      );
+
+    case 'moon':
+      return (
+        <svg width={s} height={s} viewBox="0 0 100 100">
+          <path d="M62 16 C40 19 24 36 24 56 C24 76 41 90 62 90 C70 90 77 88 83 84 C69 87 56 83 47 73 C36 60 36 39 48 26 C52 21 57 18 62 16 Z" fill="#facc15" />
         </svg>
       );
 

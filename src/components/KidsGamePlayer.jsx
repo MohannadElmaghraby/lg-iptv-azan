@@ -75,6 +75,11 @@ export default function KidsGamePlayer({
   useEffect(function () {
     if (externalPauseReason) {
       stopGameAudio();
+      if (nextTimerRef.current) {
+        clearTimeout(nextTimerRef.current);
+        nextTimerRef.current = null;
+        setLockedInput(false);
+      }
     }
   }, [externalPauseReason]);
 
