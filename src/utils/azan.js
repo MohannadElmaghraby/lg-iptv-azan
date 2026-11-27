@@ -262,10 +262,13 @@ export function playFallbackAzanChime(onEnded) {
 }
 
 export function playAzanAudio(customUrl, onEnded) {
-  const src = (customUrl && customUrl.trim()) || './audio/azan.mp3';
+  const customSrc = customUrl && customUrl.trim();
+  const defaultSrc = './audio/azan.mp3';
+  const primarySrc = customSrc || defaultSrc;
   let activeFallback = null;
   let audio = null;
   let finished = false;
+  let triedDefault = !customSrc;
 
   const done = function () {
     if (finished) return;
@@ -273,25 +276,32 @@ export function playAzanAudio(customUrl, onEnded) {
     if (onEnded) onEnded();
   };
 
-  try {
-    audio = new Audio(src);
-    audio.volume = 0.92;
-    audio.addEventListener('ended', done);
-    audio.addEventListener('error', function () {
-      if (finished) return;
+  const handleFailure = function () {
+    if (finished) return;
+    if (!triedDefault) {
+      triedDefault = true;
+      startSrc(defaultSrc);
+    } else {
       activeFallback = playFallbackAzanChime(done);
-    });
-    const playPromise = audio.play();
-    if (playPromise && typeof playPromise.catch === 'function') {
-      playPromise.catch(function () {
-        if (!finished) {
-          activeFallback = playFallbackAzanChime(done);
-        }
-      });
     }
-  } catch (e) {
-    activeFallback = playFallbackAzanChime(done);
-  }
+  };
+
+  const startSrc = function (src) {
+    try {
+      audio = new Audio(src);
+      audio.volume = 0.95;
+      audio.addEventListener('ended', done);
+      audio.addEventListener('error', handleFailure);
+      const playPromise = audio.play();
+      if (playPromise && typeof playPromise.catch === 'function') {
+        playPromise.catch(handleFailure);
+      }
+    } catch (e) {
+      handleFailure();
+    }
+  };
+
+  startSrc(primarySrc);
 
   return {
     stop: function () {
