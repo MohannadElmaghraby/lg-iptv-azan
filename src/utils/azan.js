@@ -1,4 +1,4 @@
-import { Coordinates, CalculationMethod, PrayerTimes, Madhab } from 'adhan';
+import { Coordinates, CalculationMethod, PrayerTimes, Madhab, HighLatitudeRule } from 'adhan';
 import { readStorage, writeStorage } from './storage.js';
 
 const AZAN_SETTINGS_KEY = 'azan_settings_v1';
@@ -14,6 +14,11 @@ export const PRAYER_META = {
 };
 
 export const CITY_PRESETS = [
+  { id: 'dublin', name: 'Dublin, Ireland', ar: 'دبلن، أيرلندا', lat: 53.3498, lon: -6.2603, method: 'MuslimWorldLeague' },
+  { id: 'cork', name: 'Cork, Ireland', ar: 'كورك، أيرلندا', lat: 51.8985, lon: -8.4756, method: 'MuslimWorldLeague' },
+  { id: 'galway', name: 'Galway, Ireland', ar: 'غالواي، أيرلندا', lat: 53.2707, lon: -9.0568, method: 'MuslimWorldLeague' },
+  { id: 'belfast', name: 'Belfast, UK', ar: 'بلفاست', lat: 54.5973, lon: -5.9301, method: 'MuslimWorldLeague' },
+  { id: 'london', name: 'London, UK', ar: 'لندن', lat: 51.5074, lon: -0.1278, method: 'MuslimWorldLeague' },
   { id: 'cairo', name: 'Cairo, Egypt', ar: 'القاهرة', lat: 30.0444, lon: 31.2357, method: 'Egyptian' },
   { id: 'alexandria', name: 'Alexandria, Egypt', ar: 'الإسكندرية', lat: 31.2001, lon: 29.9187, method: 'Egyptian' },
   { id: 'makkah', name: 'Makkah, Saudi Arabia', ar: 'مكة المكرمة', lat: 21.4225, lon: 39.8262, method: 'UmmAlQura' },
@@ -23,16 +28,43 @@ export const CITY_PRESETS = [
   { id: 'doha', name: 'Doha, Qatar', ar: 'الدوحة', lat: 25.2854, lon: 51.531, method: 'Qatar' },
   { id: 'kuwait', name: 'Kuwait City', ar: 'الكويت', lat: 29.3759, lon: 47.9774, method: 'Kuwait' },
   { id: 'istanbul', name: 'Istanbul, Turkey', ar: 'إسطنبول', lat: 41.0082, lon: 28.9784, method: 'Turkey' },
-  { id: 'london', name: 'London, UK', ar: 'لندن', lat: 51.5074, lon: -0.1278, method: 'MuslimWorldLeague' },
   { id: 'toronto', name: 'Toronto, Canada', ar: 'تورونتو', lat: 43.6532, lon: -79.3832, method: 'NorthAmerica' },
   { id: 'newyork', name: 'New York, USA', ar: 'نيويورك', lat: 40.7128, lon: -74.006, method: 'NorthAmerica' },
   { id: 'kualalumpur', name: 'Kuala Lumpur, MY', ar: 'كوالالمبور', lat: 3.139, lon: 101.6869, method: 'Singapore' },
 ];
 
+const TIMEZONE_CITY_MAP = {
+  'Europe/Dublin': 'dublin',
+  'Eire': 'dublin',
+  'Europe/London': 'london',
+  'Europe/Belfast': 'belfast',
+  'Africa/Cairo': 'cairo',
+  'Asia/Riyadh': 'riyadh',
+  'Asia/Dubai': 'dubai',
+  'Asia/Qatar': 'doha',
+  'Asia/Kuwait': 'kuwait',
+  'Europe/Istanbul': 'istanbul',
+  'America/Toronto': 'toronto',
+  'America/New_York': 'newyork',
+  'Asia/Kuala_Lumpur': 'kualalumpur',
+};
+
+export function detectCityPresetFromTimezone() {
+  try {
+    const tz = Intl && Intl.DateTimeFormat && Intl.DateTimeFormat().resolvedOptions().timeZone;
+    if (tz && TIMEZONE_CITY_MAP[tz]) {
+      const id = TIMEZONE_CITY_MAP[tz];
+      const match = CITY_PRESETS.find(function (c) { return c.id === id; });
+      if (match) return match;
+    }
+  } catch (e) { /* ignore */ }
+  return null;
+}
+
 export const CALCULATION_METHODS = [
   { id: 'Egyptian', label: 'Egyptian General Authority' },
   { id: 'UmmAlQura', label: 'Umm Al-Qura (Makkah)' },
-  { id: 'MuslimWorldLeague', label: 'Muslim World League' },
+  { id: 'MuslimWorldLeague', label: 'Muslim World League (Ireland / Europe)' },
   { id: 'NorthAmerica', label: 'ISNA (North America)' },
   { id: 'Dubai', label: 'Dubai' },
   { id: 'Qatar', label: 'Qatar' },
@@ -52,6 +84,7 @@ export const DEFAULT_AZAN_SETTINGS = {
   method: 'Egyptian',
   madhab: 'Shafi',
   customAudioUrl: '',
+  userSelectedCity: false,
   enabled: {
     fajr: true,
     dhuhr: true,
@@ -70,9 +103,38 @@ export const DEFAULT_AZAN_SETTINGS = {
 
 export function loadAzanSettings() {
   const saved = readStorage(AZAN_SETTINGS_KEY, null);
+  const tzPreset = detectCityPresetFromTimezone();
+
   if (!saved || typeof saved !== 'object') {
+    if (tzPreset) {
+      return Object.assign({}, DEFAULT_AZAN_SETTINGS, {
+        cityId: tzPreset.id,
+        cityName: tzPreset.name,
+        latitude: tzPreset.lat,
+        longitude: tzPreset.lon,
+        method: tzPreset.method,
+      });
+    }
     return DEFAULT_AZAN_SETTINGS;
   }
+
+  // Auto-upgrade legacy unconfigured Cairo default if the TV timezone clearly matches another preset (e.g., Europe/Dublin)
+  const isLegacyDefaultCairo = !saved.userSelectedCity && (saved.cityId === 'cairo' || !saved.cityId);
+  if (isLegacyDefaultCairo && tzPreset && tzPreset.id !== 'cairo') {
+    return {
+      cityId: tzPreset.id,
+      cityName: tzPreset.name,
+      latitude: tzPreset.lat,
+      longitude: tzPreset.lon,
+      method: tzPreset.method,
+      madhab: saved.madhab === 'Hanafi' ? 'Hanafi' : 'Shafi',
+      customAudioUrl: saved.customAudioUrl || '',
+      userSelectedCity: false,
+      enabled: Object.assign({}, DEFAULT_AZAN_SETTINGS.enabled, saved.enabled || {}),
+      offsets: Object.assign({}, DEFAULT_AZAN_SETTINGS.offsets, saved.offsets || {}),
+    };
+  }
+
   return {
     cityId: saved.cityId || DEFAULT_AZAN_SETTINGS.cityId,
     cityName: saved.cityName || DEFAULT_AZAN_SETTINGS.cityName,
@@ -81,6 +143,7 @@ export function loadAzanSettings() {
     method: saved.method || DEFAULT_AZAN_SETTINGS.method,
     madhab: saved.madhab === 'Hanafi' ? 'Hanafi' : 'Shafi',
     customAudioUrl: saved.customAudioUrl || '',
+    userSelectedCity: Boolean(saved.userSelectedCity),
     enabled: Object.assign({}, DEFAULT_AZAN_SETTINGS.enabled, saved.enabled || {}),
     offsets: Object.assign({}, DEFAULT_AZAN_SETTINGS.offsets, saved.offsets || {}),
   };
@@ -91,10 +154,14 @@ export function saveAzanSettings(settings) {
   return settings;
 }
 
-function resolveCalculationParams(methodName, madhabName) {
+function resolveCalculationParams(methodName, madhabName, latitude) {
   const fn = CalculationMethod[methodName] || CalculationMethod.Egyptian;
   const params = fn();
   params.madhab = madhabName === 'Hanafi' ? Madhab.Hanafi : Madhab.Shafi;
+  // High-latitude regions (e.g. Dublin 53.35°N, UK, Northern Europe) need SeventhOfTheNight so summer Isha/Fajr stay valid
+  if (typeof latitude === 'number' && Math.abs(latitude) >= 48 && methodName !== 'MoonsightingCommittee') {
+    params.highLatitudeRule = HighLatitudeRule.SeventhOfTheNight;
+  }
   return params;
 }
 
@@ -105,7 +172,7 @@ export function calculatePrayerSchedule(date = new Date(), settings = DEFAULT_AZ
   const safeLon = isFinite(lon) ? Math.max(-180, Math.min(180, lon)) : 31.2357;
 
   const coords = new Coordinates(safeLat, safeLon);
-  const params = resolveCalculationParams(settings.method, settings.madhab);
+  const params = resolveCalculationParams(settings.method, settings.madhab, safeLat);
   const times = new PrayerTimes(coords, date, params);
 
   const offsets = settings.offsets || {};

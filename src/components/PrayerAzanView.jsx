@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import AppIcon from './AppIcon.jsx';
 import {
   CITY_PRESETS,
@@ -14,6 +14,17 @@ export default function PrayerAzanView({
   onTestAzan,
   onTestAzanWithVideo,
 }) {
+  const [latDraft, setLatDraft] = useState(String(settings.latitude));
+  const [lonDraft, setLonDraft] = useState(String(settings.longitude));
+
+  useEffect(function () {
+    setLatDraft(String(settings.latitude));
+  }, [settings.latitude]);
+
+  useEffect(function () {
+    setLonDraft(String(settings.longitude));
+  }, [settings.longitude]);
+
   const schedule = (nextPrayerInfo && nextPrayerInfo.schedule) || [];
   const nextKey = nextPrayerInfo && nextPrayerInfo.prayer ? nextPrayerInfo.prayer.key : '';
 
@@ -27,6 +38,7 @@ export default function PrayerAzanView({
         latitude: city.lat,
         longitude: city.lon,
         method: city.method,
+        userSelectedCity: true,
       })
     );
   };
@@ -52,7 +64,7 @@ export default function PrayerAzanView({
         <div>
           <h3 style={{ fontSize: 26, margin: '0 0 6px 0', color: '#f0c94d' }}>
             <AppIcon name="azan" size={26} style={{ marginRight: 10 }} />
-            Offline Arabic Azan &amp; Prayer Times
+            Offline Arabic Azan &amp; Prayer Times — {settings.cityName || 'Custom Location'}
           </h3>
           <div style={{ fontSize: 16, color: '#98a2b3' }}>
             {nextPrayerInfo && nextPrayerInfo.prayer ? (
@@ -148,6 +160,9 @@ export default function PrayerAzanView({
               value={settings.cityId}
               onChange={function (e) { handleCityChange(e.target.value); }}
             >
+              {settings.cityId === 'custom' && (
+                <option value="custom">Custom Coordinates ({settings.latitude}, {settings.longitude})</option>
+              )}
               {CITY_PRESETS.map(function (c) {
                 return (
                   <option key={c.id} value={c.id}>
@@ -198,16 +213,23 @@ export default function PrayerAzanView({
           <div className="form-field">
             <label className="form-label">Custom Latitude</label>
             <input
-              type="number"
-              step="0.0001"
+              type="text"
+              inputMode="decimal"
               data-focusable="true"
               className="tv-input"
-              value={settings.latitude}
+              value={latDraft}
               onChange={function (e) {
-                onUpdateSettings(Object.assign({}, settings, {
-                  cityId: 'custom',
-                  latitude: parseFloat(e.target.value) || 0,
-                }));
+                const raw = e.target.value;
+                setLatDraft(raw);
+                const parsed = parseFloat(raw);
+                if (raw.trim() !== '' && raw.trim() !== '-' && !isNaN(parsed) && parsed >= -90 && parsed <= 90) {
+                  onUpdateSettings(Object.assign({}, settings, {
+                    cityId: 'custom',
+                    cityName: 'Custom Location',
+                    userSelectedCity: true,
+                    latitude: parsed,
+                  }));
+                }
               }}
             />
           </div>
@@ -215,16 +237,23 @@ export default function PrayerAzanView({
           <div className="form-field">
             <label className="form-label">Custom Longitude</label>
             <input
-              type="number"
-              step="0.0001"
+              type="text"
+              inputMode="decimal"
               data-focusable="true"
               className="tv-input"
-              value={settings.longitude}
+              value={lonDraft}
               onChange={function (e) {
-                onUpdateSettings(Object.assign({}, settings, {
-                  cityId: 'custom',
-                  longitude: parseFloat(e.target.value) || 0,
-                }));
+                const raw = e.target.value;
+                setLonDraft(raw);
+                const parsed = parseFloat(raw);
+                if (raw.trim() !== '' && raw.trim() !== '-' && !isNaN(parsed) && parsed >= -180 && parsed <= 180) {
+                  onUpdateSettings(Object.assign({}, settings, {
+                    cityId: 'custom',
+                    cityName: 'Custom Location',
+                    userSelectedCity: true,
+                    longitude: parsed,
+                  }));
+                }
               }}
             />
           </div>

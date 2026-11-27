@@ -44,4 +44,28 @@ describe('Offline Arabic Azan Calculator (adhan)', () => {
     const nextInfo = getNextPrayerInfo(date, settings);
     expect(nextInfo.prayer.key).toBe('dhuhr');
   });
+
+  it('calculates accurate Dublin, Ireland prayer times in winter and summer (next prayer Isha at 17:10 UTC)', () => {
+    const dublinSettings = {
+      ...DEFAULT_AZAN_SETTINGS,
+      cityId: 'dublin',
+      cityName: 'Dublin, Ireland',
+      latitude: 53.3498,
+      longitude: -6.2603,
+      method: 'MuslimWorldLeague',
+    };
+
+    // 17:10 UTC on Nov 27 in Dublin -> Isha is ~18:14 UTC (~1 hour away), NOT Fajr!
+    const winterEvening = new Date('2026-11-27T17:10:00Z');
+    const nextWinter = getNextPrayerInfo(winterEvening, dublinSettings);
+    expect(nextWinter.prayer.key).toBe('isha');
+    expect(nextWinter.remainingMs).toBeGreaterThan(45 * 60000);
+    expect(nextWinter.remainingMs).toBeLessThan(80 * 60000);
+
+    // Summer solstice (high latitude 53.35°N) -> SeventhOfTheNight keeps Isha valid on same evening (~21:57 UTC)
+    const summerSchedule = calculatePrayerSchedule(new Date('2026-06-21T12:00:00Z'), dublinSettings);
+    const summerIsha = summerSchedule.find((p) => p.key === 'isha');
+    expect(summerIsha.time.getUTCHours()).toBeGreaterThanOrEqual(21);
+    expect(summerIsha.time.getUTCHours()).toBeLessThanOrEqual(23);
+  });
 });
