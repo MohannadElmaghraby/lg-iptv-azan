@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { fetchXtreamSeriesEpisodes } from '../utils/xtreamClient.js';
 import { formatPlaybackTime, findWatchProgressForItem, isResumableProgress } from '../utils/watchProgress.js';
+import LoadingSpinner from './LoadingSpinner.jsx';
 
 export function ResumePromptModal({ entry, onResume, onStartOver, onClose }) {
   if (!entry) return null;
@@ -178,7 +179,13 @@ export function SeriesModal({
           </p>
         )}
 
-        {loading && <div style={{ padding: 24, fontSize: 18 }}>Loading seasons &amp; episodes...</div>}
+        {loading && (
+          <LoadingSpinner
+            size={52}
+            label="Loading seasons & episodes..."
+            sublabel="Fetching episodes from your IPTV server"
+          />
+        )}
         {error && <div style={{ padding: 16, color: '#fca5a5' }}>{error}</div>}
 
         {!loading && seasonKeys.length > 0 && (

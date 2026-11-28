@@ -4,6 +4,7 @@ import { formatPlaybackTime } from '../utils/watchProgress.js';
 import { WEBOS_KEYS } from '../utils/spatialNav.js';
 import { fetchXtreamShortEpg } from '../utils/xtreamClient.js';
 import AppIcon from './AppIcon.jsx';
+import LoadingSpinner from './LoadingSpinner.jsx';
 
 const ASPECT_MODES = [
   { id: 'fit', label: 'Fit (Original)', style: { width: '100%', height: '100%', objectFit: 'contain' } },
@@ -823,27 +824,14 @@ export default function VideoPlayer({
         />
       </div>
 
-      {/* Buffering Indicator */}
+      {/* IPTV Smarters Pro Animated Buffering Spinner */}
       {isBuffering && !errorMsg && (
-        <div
-          style={{
-            position: 'absolute',
-            top: '50%',
-            left: '50%',
-            transform: 'translate(-50%, -50%)',
-            padding: '14px 28px',
-            borderRadius: 999,
-            backgroundColor: 'rgba(5, 8, 16, 0.88)',
-            border: '2px solid rgba(34, 211, 238, 0.6)',
-            fontSize: 20,
-            fontWeight: 700,
-            color: '#38bdf8',
-            zIndex: 14,
-            pointerEvents: 'none',
-          }}
-        >
-          <AppIcon name="timer" size={20} color="#38bdf8" style={{ marginRight: 8 }} />
-          Buffering Stream...
+        <div className="smarters-player-buffering">
+          <LoadingSpinner
+            size={60}
+            label="Loading Stream..."
+            sublabel="Buffering for smooth playback"
+          />
         </div>
       )}
 
@@ -1133,6 +1121,7 @@ export default function VideoPlayer({
 
           {/* Center Floating Smarters Pro Circular Transport Controls (-10s | Play/Pause | +10s) */}
           <div className="smarters-player-center">
+            {!(isBuffering && !errorMsg) && (
             <div className="smarters-transport-group" onClick={function (e) { e.stopPropagation(); }}>
               {item.type === 'live' && liveChannels && liveChannels.length > 1 ? (
                 <button
@@ -1248,6 +1237,7 @@ export default function VideoPlayer({
                 </button>
               )}
             </div>
+            )}
           </div>
 
           {/* Bottom Slim Smarters Pro Cyan Seek Bar & Quick Actions */}

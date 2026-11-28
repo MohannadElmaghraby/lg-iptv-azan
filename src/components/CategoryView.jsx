@@ -2,6 +2,7 @@ import React, { useState, useMemo, useEffect } from 'react';
 import MediaCard from './MediaCard.jsx';
 import TvKeyboard from './TvKeyboard.jsx';
 import AppIcon from './AppIcon.jsx';
+import LoadingSpinner from './LoadingSpinner.jsx';
 import { isFavoriteItem } from '../utils/favorites.js';
 import {
   normalizeSearchText,
@@ -19,10 +20,10 @@ const RECENT_LIST_LIMIT = 100;
 const SORT_PREFS_KEY = 'category_sort_v1';
 
 const SORT_OPTIONS = [
-  { id: 'default', label: 'Default' },
-  { id: 'recent', label: 'Most Recent' },
-  { id: 'az', label: 'A–Z' },
-  { id: 'za', label: 'Z–A' },
+  { id: 'recent', label: 'Sort: Recently Added' },
+  { id: 'az', label: 'Sort: A–Z' },
+  { id: 'za', label: 'Sort: Z–A' },
+  { id: 'default', label: 'Sort: Default Order' },
 ];
 
 export default function CategoryView({
@@ -34,6 +35,8 @@ export default function CategoryView({
   continueWatching,
   nextPrayerInfo,
   kidsTimer,
+  loadingSource,
+  loadingMessage,
   onSelectItem,
   onResumeItem,
   onRemoveContinueItem,
@@ -47,24 +50,22 @@ export default function CategoryView({
   const [catQuery, setCatQuery] = useState('');
   const [showAllGroups, setShowAllGroups] = useState(false);
   const [searchOpen, setSearchOpen] = useState(false);
-  const [sortOpen, setSortOpen] = useState(false);
   const [query, setQuery] = useState('');
   const [debouncedQuery, setDebouncedQuery] = useState('');
   const [showKeyboard, setShowKeyboard] = useState(false);
   const [page, setPage] = useState(0);
 
-  // Remembered sort preference per section ('live' | 'movies' | 'series')
+  // Remembered sort preference per section ('live' | 'movies' | 'series') — defaults to Recently Added!
   const [sortPrefs, setSortPrefs] = useState(function () {
     return readStorage(SORT_PREFS_KEY, {});
   });
-  const sortMode = (sortPrefs && sortPrefs[categoryType]) || 'default';
+  const sortMode = (sortPrefs && sortPrefs[categoryType]) || 'recent';
 
   const handleSetSort = function (nextMode) {
     const nextPrefs = Object.assign({}, sortPrefs || {}, { [categoryType]: nextMode });
     setSortPrefs(nextPrefs);
     writeStorage(SORT_PREFS_KEY, nextPrefs);
     setPage(0);
-    setSortOpen(false);
   };
 
   // Reset sidebar selection and search when switching category (keep remembered sortMode!)
@@ -74,7 +75,6 @@ export default function CategoryView({
     setCatQuery('');
     setShowAllGroups(false);
     setSearchOpen(false);
-    setSortOpen(false);
     setQuery('');
     setDebouncedQuery('');
     setShowKeyboard(false);
@@ -186,7 +186,6 @@ export default function CategoryView({
   const activeIconName = categoryType === 'live' ? 'live' : categoryType === 'movies' ? 'movies' : 'series';
   const prayer = nextPrayerInfo && nextPrayerInfo.prayer;
   const countdown = nextPrayerInfo ? formatCountdown(nextPrayerInfo.remainingMs) : '--:--';
-  const activeSortObj = SORT_OPTIONS.find(function (s) { return s.id === sortMode; }) || SORT_OPTIONS[0];
 
   return (
     <div className="smarters-workspace">
@@ -409,37 +408,41 @@ export default function CategoryView({
             <span style={{ overflow: 'hidden', textOverflow: 'ellipsis' }}>{activeCategoryLabel}</span>
           </div>
 
-          {/* Right Action Icons: Search Toggle + Sort Menu (⋮) */}
+          {/* Right Action Controls: Updating pill + Search Toggle + Sort Dropdown */}
           <div style={{ display: 'flex', alignItems: 'center' }}>
+            {loadingSource && items && items.length > 0 && (
+              <div style={{ marginRight: 12 }}>
+                <LoadingSpinner inline size={18} label="Updating..." />
+              </div>
+            )}
+
             <button
               type="button"
               data-focusable="true"
               className={'smarters-icon-btn' + (searchOpen || query ? ' active' : '')}
               style={{ marginRight: 10 }}
-              onClick={function () {
-                setSearchOpen(!searchOpen);
-                setSortOpen(false);
-              }}
+              onClick={function () { setSearchOpen(!searchOpen); }}
               title={'Search in ' + title}
               aria-label={'Search in ' + title}
             >
               <AppIcon name="search" size={22} />
             </button>
 
-            <button
-              type="button"
+            <select
               data-focusable="true"
-              className={'smarters-icon-btn' + (sortOpen || sortMode !== 'default' ? ' active' : '')}
-              onClick={function () {
-                setSortOpen(!sortOpen);
-                setSearchOpen(false);
-              }}
-              title={'Sort: ' + activeSortObj.label}
-              aria-label="Sort options"
+              className="smarters-sort-select"
+              aria-label={'Sort ' + title}
+              value={sortMode}
+              onChange={function (e) { handleSetSort(e.target.value); }}
             >
-              <span style={{ fontSize: 14, marginRight: 6 }}>{activeSortObj.label}</span>
-              <span>⋮</span>
-            </button>
+              {SORT_OPTIONS.map(function (opt) {
+                return (
+                  <option key={opt.id} value={opt.id}>
+                    {opt.label}
+                  </option>
+                );
+              })}
+            </select>
           </div>
         </header>
 
@@ -483,29 +486,6 @@ export default function CategoryView({
           </div>
         )}
 
-        {/* Expandable Persistent Sort Bar */}
-        {sortOpen && (
-          <div className="smarters-toolbar-drawer" style={{ display: 'flex', alignItems: 'center', justifyContent: 'flex-end' }}>
-            <span style={{ fontSize: 15, fontWeight: 700, color: '#94a3b8', marginRight: 14 }}>
-              Sort {title} (remembered):
-            </span>
-            {SORT_OPTIONS.map(function (opt) {
-              return (
-                <button
-                  key={opt.id}
-                  type="button"
-                  data-focusable="true"
-                  className={'chip' + (sortMode === opt.id ? ' active' : '')}
-                  style={{ marginBottom: 0, padding: '8px 16px', fontSize: 15 }}
-                  onClick={function () { handleSetSort(opt.id); }}
-                >
-                  {opt.label}
-                </button>
-              );
-            })}
-          </div>
-        )}
-
         {/* Poster Wall / Channel Grid */}
         <div className="smarters-grid-scroll">
           {totalPages > 1 && (
@@ -540,7 +520,24 @@ export default function CategoryView({
             </div>
           )}
 
-          {visibleSlice.length === 0 ? (
+          {loadingSource && (!items || items.length === 0) ? (
+            <div>
+              <LoadingSpinner
+                size={62}
+                label={'Loading ' + title + '...'}
+                sublabel={loadingMessage || 'Preparing categories and posters from your IPTV playlist'}
+              />
+              <div className={isPosterWall ? ('smarters-poster-grid' + (!sidebarOpen ? ' expanded' : '')) : 'cards-grid'}>
+                {[0, 1, 2, 3, 4, 5, 6, 7, 8, 9].map(function (idx) {
+                  return (
+                    <div key={idx} className={isPosterWall ? 'smarters-poster-wrap' : 'media-card-wrap'}>
+                      <div className="smarters-skeleton-card" style={isPosterWall ? undefined : { height: 220 }} />
+                    </div>
+                  );
+                })}
+              </div>
+            </div>
+          ) : visibleSlice.length === 0 ? (
             <div className="panel" style={{ textAlign: 'center', padding: '56px 24px' }}>
               <h3 style={{ fontSize: 22, margin: '0 0 8px 0' }}>
                 {debouncedQuery

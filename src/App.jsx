@@ -14,6 +14,7 @@ import KidsGamePlayer from './components/KidsGamePlayer.jsx';
 import AzanOverlay from './components/AzanOverlay.jsx';
 import KidsLockOverlay from './components/KidsLockOverlay.jsx';
 import { ResumePromptModal, SeriesModal } from './components/SeriesModal.jsx';
+import LoadingSpinner from './components/LoadingSpinner.jsx';
 
 import { readStorage, writeStorage, removeStorage } from './utils/storage.js';
 import { parseM3U } from './utils/m3uParser.js';
@@ -66,6 +67,7 @@ export default function App() {
     return readStorage(CONVERT_TS_KEY, true);
   });
   const [loadingSource, setLoadingSource] = useState(false);
+  const [loadingMessage, setLoadingMessage] = useState('');
   const [sourceStatus, setSourceStatus] = useState(null);
 
   const [favorites, setFavorites] = useState(loadFavorites);
@@ -122,11 +124,13 @@ export default function App() {
 
   const handleLoadM3uUrl = useCallback(async function (url) {
     setLoadingSource(true);
+    setLoadingMessage('Downloading M3U playlist from your server...');
     setSourceStatus(null);
     try {
       const res = await fetch(url);
       if (!res.ok) throw new Error('HTTP ' + res.status + ' fetching playlist');
       const text = await res.text();
+      setLoadingMessage('Organizing Live TV, Movies & Series...');
       applyM3uText(text, url, { mode: 'm3u_url', m3uUrl: url, label: 'M3U URL' });
     } catch (err) {
       setSourceStatus({
@@ -135,6 +139,7 @@ export default function App() {
       });
     } finally {
       setLoadingSource(false);
+      setLoadingMessage('');
     }
   }, [applyM3uText]);
 
@@ -149,6 +154,7 @@ export default function App() {
 
   const handleLoadXtream = useCallback(async function (creds) {
     setLoadingSource(true);
+    setLoadingMessage('Downloading Live TV, Movies & Series...');
     setSourceStatus(null);
     try {
       const data = await fetchXtreamCatalog(creds, { convertTs: convertTsRef.current });
@@ -186,6 +192,7 @@ export default function App() {
       });
     } finally {
       setLoadingSource(false);
+      setLoadingMessage('');
     }
   }, []);
 
@@ -528,6 +535,8 @@ export default function App() {
             continueWatching={watchProgress}
             nextPrayerInfo={nextPrayerInfo}
             kidsTimer={kidsTimer}
+            loadingSource={loadingSource}
+            loadingMessage={loadingMessage}
             onSelectItem={handleSelectItem}
             onResumeItem={handleResumeCardSelect}
             onRemoveContinueItem={handleRemoveContinueItem}
@@ -707,6 +716,19 @@ export default function App() {
         }}
         onClose={function () { setSeriesModalItem(null); }}
       />
+
+      {/* IPTV Smarters Pro Cold-Load Content Spinner Overlay */}
+      {loadingSource && catalog.items.length === 0 && !isCategoryWorkspace && (
+        <div className="smarters-loading-overlay" role="status" aria-live="polite">
+          <div className="smarters-loading-card">
+            <LoadingSpinner
+              size={68}
+              label="Loading Asyad TV Content..."
+              sublabel={loadingMessage || 'Downloading Live TV, Movies & Series from your server'}
+            />
+          </div>
+        </div>
+      )}
 
       {/* Kids Timer Screen Lock Overlay */}
       {kidsLocked && (

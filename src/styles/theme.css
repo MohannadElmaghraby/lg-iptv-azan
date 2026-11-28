@@ -1571,3 +1571,140 @@ select {
   border-color: rgba(239, 68, 68, 0.45);
   background-color: rgba(127, 29, 29, 0.65);
 }
+
+/* =====================================================================
+   IPTV Smarters Pro Loading Spinners, Shimmers & Sort Dropdown
+   ===================================================================== */
+@keyframes smartersSpin {
+  0% { transform: rotate(0deg); }
+  100% { transform: rotate(360deg); }
+}
+
+@keyframes smartersSpinRev {
+  0% { transform: rotate(360deg); }
+  100% { transform: rotate(0deg); }
+}
+
+@keyframes smartersPulse {
+  0%, 100% { opacity: 0.35; }
+  50% { opacity: 0.7; }
+}
+
+.smarters-loader-box {
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  justify-content: center;
+  text-align: center;
+  padding: 28px 20px;
+}
+
+.smarters-spinner-wrap {
+  position: relative;
+  margin-bottom: 16px;
+}
+
+.smarters-spinner {
+  border-radius: 50%;
+  border: 4px solid rgba(34, 211, 238, 0.18);
+  border-top-color: #22d3ee;
+  border-right-color: #38bdf8;
+  animation: smartersSpin 0.85s linear infinite;
+}
+
+.smarters-spinner-inner {
+  position: absolute;
+  border-radius: 50%;
+  border: 3px solid rgba(240, 201, 77, 0.16);
+  border-bottom-color: #f0c94d;
+  animation: smartersSpinRev 1.2s linear infinite;
+}
+
+.smarters-loader-title {
+  font-size: 22px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: 0.3px;
+}
+
+.smarters-loader-sub {
+  font-size: 15px;
+  color: #94a3b8;
+  margin-top: 6px;
+}
+
+.smarters-inline-loader {
+  display: inline-flex;
+  align-items: center;
+  padding: 6px 14px;
+  border-radius: 999px;
+  background-color: rgba(14, 116, 144, 0.25);
+  border: 1px solid rgba(34, 211, 238, 0.45);
+  color: #bae6fd;
+  font-size: 14px;
+  font-weight: 700;
+}
+
+.smarters-loading-overlay {
+  position: fixed;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  background: radial-gradient(circle at center, rgba(10, 17, 32, 0.94) 0%, rgba(4, 6, 12, 0.98) 100%);
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  z-index: 45;
+}
+
+.smarters-loading-card {
+  min-width: 440px;
+  padding: 36px 46px;
+  border-radius: 22px;
+  background-color: rgba(12, 18, 30, 0.96);
+  border: 2px solid rgba(34, 211, 238, 0.4);
+  box-shadow: 0 24px 64px rgba(0, 0, 0, 0.75);
+}
+
+.smarters-player-buffering {
+  position: absolute;
+  top: 50%;
+  left: 50%;
+  transform: translate(-50%, -50%);
+  padding: 20px 34px;
+  border-radius: 20px;
+  background-color: rgba(5, 8, 16, 0.86);
+  border: 2px solid rgba(34, 211, 238, 0.48);
+  box-shadow: 0 12px 36px rgba(0, 0, 0, 0.7);
+  z-index: 16;
+  pointer-events: none;
+}
+
+.smarters-skeleton-card {
+  width: 100%;
+  height: 360px;
+  border-radius: 10px;
+  background: linear-gradient(160deg, #131b2e 0%, #0b101d 100%);
+  border: 2px solid rgba(255, 255, 255, 0.06);
+  animation: smartersPulse 1.4s ease-in-out infinite;
+}
+
+.smarters-sort-select {
+  height: 46px;
+  padding: 0 14px;
+  border-radius: 10px;
+  border: 2px solid rgba(34, 211, 238, 0.35);
+  background-color: #101827;
+  color: #f8fafc;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.smarters-sort-select:hover,
+.smarters-sort-select:focus {
+  outline: none;
+  border-color: #22d3ee;
+  background-color: rgba(14, 116, 144, 0.4);
+}
