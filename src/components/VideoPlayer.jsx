@@ -799,7 +799,6 @@ export default function VideoPlayer({
   return (
     <div
       className="fullscreen-overlay"
-      onMouseMove={function () { showOsd(false); }}
       onClick={handleStageClick}
       data-modal-scope="player"
     >
@@ -1119,128 +1118,7 @@ export default function VideoPlayer({
             </div>
           )}
 
-          {/* Center Floating Smarters Pro Circular Transport Controls (-10s | Play/Pause | +10s) */}
-          <div className="smarters-player-center">
-            {!(isBuffering && !errorMsg) && (
-            <div className="smarters-transport-group" onClick={function (e) { e.stopPropagation(); }}>
-              {item.type === 'live' && liveChannels && liveChannels.length > 1 ? (
-                <button
-                  type="button"
-                  data-focusable="true"
-                  className="smarters-transport-btn"
-                  onClick={function () { zapChannel(-1); }}
-                >
-                  ◀ Prev CH
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  data-focusable="true"
-                  className="smarters-transport-btn"
-                  onMouseDown={function () {
-                    didMouseDownRef.current = true;
-                    startHoldSeek(-1);
-                  }}
-                  onMouseUp={stopHoldSeek}
-                  onMouseLeave={stopHoldSeek}
-                  onTouchStart={function () {
-                    didMouseDownRef.current = true;
-                    startHoldSeek(-1);
-                  }}
-                  onTouchEnd={stopHoldSeek}
-                  onClick={function () {
-                    if (didMouseDownRef.current) {
-                      didMouseDownRef.current = false;
-                      return;
-                    }
-                    seekBy(-10);
-                  }}
-                  onKeyDown={function (e) {
-                    if ((e.keyCode || e.which) === WEBOS_KEYS.OK) {
-                      e.preventDefault();
-                      seekBy(e.repeat ? -30 : -10);
-                    }
-                  }}
-                >
-                  <svg width="20" height="20" viewBox="0 0 24 24" style={{ marginRight: 6, verticalAlign: 'middle' }} aria-hidden="true">
-                    <polygon points="11,5 2,12 11,19" fill="currentColor" />
-                    <polygon points="22,5 13,12 22,19" fill="currentColor" />
-                  </svg>
-                  -10s
-                </button>
-              )}
-
-              <button
-                ref={playPauseBtnRef}
-                type="button"
-                data-focusable="true"
-                className="smarters-transport-btn play-main"
-                onClick={togglePlayPause}
-                aria-label={isPlaying ? 'Pause' : 'Play'}
-              >
-                {isPlaying ? (
-                  <svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true">
-                    <rect x="5" y="4" width="5" height="16" rx="1.5" fill="#ffffff" />
-                    <rect x="14" y="4" width="5" height="16" rx="1.5" fill="#ffffff" />
-                  </svg>
-                ) : (
-                  <svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true">
-                    <polygon points="6,4 20,12 6,20" fill="#ffffff" />
-                  </svg>
-                )}
-              </button>
-
-              {item.type === 'live' && liveChannels && liveChannels.length > 1 ? (
-                <button
-                  type="button"
-                  data-focusable="true"
-                  className="smarters-transport-btn"
-                  onClick={function () { zapChannel(1); }}
-                >
-                  Next CH ▶
-                </button>
-              ) : (
-                <button
-                  type="button"
-                  data-focusable="true"
-                  className="smarters-transport-btn"
-                  onMouseDown={function () {
-                    didMouseDownRef.current = true;
-                    startHoldSeek(1);
-                  }}
-                  onMouseUp={stopHoldSeek}
-                  onMouseLeave={stopHoldSeek}
-                  onTouchStart={function () {
-                    didMouseDownRef.current = true;
-                    startHoldSeek(1);
-                  }}
-                  onTouchEnd={stopHoldSeek}
-                  onClick={function () {
-                    if (didMouseDownRef.current) {
-                      didMouseDownRef.current = false;
-                      return;
-                    }
-                    seekBy(10);
-                  }}
-                  onKeyDown={function (e) {
-                    if ((e.keyCode || e.which) === WEBOS_KEYS.OK) {
-                      e.preventDefault();
-                      seekBy(e.repeat ? 30 : 10);
-                    }
-                  }}
-                >
-                  +10s
-                  <svg width="20" height="20" viewBox="0 0 24 24" style={{ marginLeft: 6, verticalAlign: 'middle' }} aria-hidden="true">
-                    <polygon points="2,5 11,12 2,19" fill="currentColor" />
-                    <polygon points="13,5 22,12 13,19" fill="currentColor" />
-                  </svg>
-                </button>
-              )}
-            </div>
-            )}
-          </div>
-
-          {/* Bottom Slim Smarters Pro Cyan Seek Bar & Quick Actions */}
+          {/* Bottom Mid-Down Classic Video Player Dock (Seek Bar + Centered -10s / || / +10s) */}
           <div className="smarters-player-bottom" onClick={function (e) { e.stopPropagation(); }}>
             {item.type !== 'live' ? (
               <div className="smarters-seek-row">
@@ -1267,12 +1145,139 @@ export default function VideoPlayer({
               </div>
             )}
 
-            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
-              <div style={{ fontSize: 14, color: '#94a3b8' }}>
-                OK: Pause/Play • ◀ / ▶: ±10s (Hold: Fast) • ▲/▼: Controls • Back: Hide / Exit
+            <div className="smarters-bottom-controls">
+              <div className="smarters-bottom-side">
+                <div style={{ fontSize: 14, color: '#94a3b8' }}>
+                  OK: Pause/Play • ◀ / ▶: ±10s (Hold: Fast) • Back: Hide / Exit
+                </div>
               </div>
 
-              <div style={{ display: 'flex', alignItems: 'center' }}>
+              <div className="smarters-transport-group">
+                {item.type === 'live' && liveChannels && liveChannels.length > 1 ? (
+                  <button
+                    type="button"
+                    data-focusable="true"
+                    className="smarters-transport-btn"
+                    onClick={function () { zapChannel(-1); }}
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginRight: 6, verticalAlign: 'middle' }} aria-hidden="true">
+                      <polygon points="15,4 5,12 15,20" fill="currentColor" />
+                    </svg>
+                    Prev CH
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    data-focusable="true"
+                    className="smarters-transport-btn"
+                    onMouseDown={function () {
+                      didMouseDownRef.current = true;
+                      startHoldSeek(-1);
+                    }}
+                    onMouseUp={stopHoldSeek}
+                    onMouseLeave={stopHoldSeek}
+                    onTouchStart={function () {
+                      didMouseDownRef.current = true;
+                      startHoldSeek(-1);
+                    }}
+                    onTouchEnd={stopHoldSeek}
+                    onClick={function () {
+                      if (didMouseDownRef.current) {
+                        didMouseDownRef.current = false;
+                        return;
+                      }
+                      seekBy(-10);
+                    }}
+                    onKeyDown={function (e) {
+                      if ((e.keyCode || e.which) === WEBOS_KEYS.OK) {
+                        e.preventDefault();
+                        seekBy(e.repeat ? -30 : -10);
+                      }
+                    }}
+                    title="Rewind 10 seconds"
+                  >
+                    <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginRight: 6, verticalAlign: 'middle' }} aria-hidden="true">
+                      <polygon points="11,5 2,12 11,19" fill="currentColor" />
+                      <polygon points="22,5 13,12 22,19" fill="currentColor" />
+                    </svg>
+                    -10s
+                  </button>
+                )}
+
+                <button
+                  ref={playPauseBtnRef}
+                  type="button"
+                  data-focusable="true"
+                  className="smarters-transport-btn play-main"
+                  onClick={togglePlayPause}
+                  aria-label={isPlaying ? 'Pause' : 'Play'}
+                  title={isPlaying ? 'Pause' : 'Play'}
+                >
+                  {isPlaying ? (
+                    <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+                      <rect x="5" y="4" width="5" height="16" rx="1.5" fill="#ffffff" />
+                      <rect x="14" y="4" width="5" height="16" rx="1.5" fill="#ffffff" />
+                    </svg>
+                  ) : (
+                    <svg width="28" height="28" viewBox="0 0 24 24" aria-hidden="true">
+                      <polygon points="6,4 20,12 6,20" fill="#ffffff" />
+                    </svg>
+                  )}
+                </button>
+
+                {item.type === 'live' && liveChannels && liveChannels.length > 1 ? (
+                  <button
+                    type="button"
+                    data-focusable="true"
+                    className="smarters-transport-btn"
+                    onClick={function () { zapChannel(1); }}
+                  >
+                    Next CH
+                    <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginLeft: 6, verticalAlign: 'middle' }} aria-hidden="true">
+                      <polygon points="9,4 19,12 9,20" fill="currentColor" />
+                    </svg>
+                  </button>
+                ) : (
+                  <button
+                    type="button"
+                    data-focusable="true"
+                    className="smarters-transport-btn"
+                    onMouseDown={function () {
+                      didMouseDownRef.current = true;
+                      startHoldSeek(1);
+                    }}
+                    onMouseUp={stopHoldSeek}
+                    onMouseLeave={stopHoldSeek}
+                    onTouchStart={function () {
+                      didMouseDownRef.current = true;
+                      startHoldSeek(1);
+                    }}
+                    onTouchEnd={stopHoldSeek}
+                    onClick={function () {
+                      if (didMouseDownRef.current) {
+                        didMouseDownRef.current = false;
+                        return;
+                      }
+                      seekBy(10);
+                    }}
+                    onKeyDown={function (e) {
+                      if ((e.keyCode || e.which) === WEBOS_KEYS.OK) {
+                        e.preventDefault();
+                        seekBy(e.repeat ? 30 : 10);
+                      }
+                    }}
+                    title="Forward 10 seconds"
+                  >
+                    +10s
+                    <svg width="18" height="18" viewBox="0 0 24 24" style={{ marginLeft: 6, verticalAlign: 'middle' }} aria-hidden="true">
+                      <polygon points="2,5 11,12 2,19" fill="currentColor" />
+                      <polygon points="13,5 22,12 13,19" fill="currentColor" />
+                    </svg>
+                  </button>
+                )}
+              </div>
+
+              <div className="smarters-bottom-side right">
                 {item.type !== 'live' && currentTime > 5 && (
                   <button
                     type="button"

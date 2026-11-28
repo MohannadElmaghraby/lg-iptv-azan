@@ -1434,17 +1434,28 @@ select {
   pointer-events: auto;
 }
 
-.smarters-player-center {
+.smarters-bottom-controls {
   display: flex;
   align-items: center;
-  justify-content: center;
-  pointer-events: none;
+  justify-content: space-between;
+}
+
+.smarters-bottom-side {
+  flex: 1;
+  display: flex;
+  align-items: center;
+  min-width: 0;
+}
+
+.smarters-bottom-side.right {
+  justify-content: flex-end;
 }
 
 .smarters-transport-group {
   display: flex;
   align-items: center;
   justify-content: center;
+  flex-shrink: 0;
   pointer-events: auto;
 }
 
@@ -1452,51 +1463,51 @@ select {
   display: inline-flex;
   align-items: center;
   justify-content: center;
-  height: 68px;
-  min-width: 112px;
-  padding: 0 22px;
-  margin: 0 14px;
+  height: 54px;
+  min-width: 108px;
+  padding: 0 20px;
+  margin: 0 10px;
   border-radius: 999px;
   border: 2px solid rgba(255, 255, 255, 0.22);
-  background-color: rgba(8, 13, 24, 0.78);
+  background-color: rgba(15, 23, 42, 0.86);
   color: #f8fafc;
-  font-size: 20px;
+  font-size: 18px;
   font-weight: 800;
   cursor: pointer;
   transition: transform 0.14s ease, border-color 0.14s ease, background-color 0.14s ease;
 }
 
 .smarters-transport-btn.play-main {
-  width: 92px;
-  min-width: 92px;
-  height: 92px;
+  width: 68px;
+  min-width: 68px;
+  height: 68px;
   padding: 0;
-  font-size: 34px;
+  font-size: 28px;
   background: linear-gradient(145deg, #0ea5e9 0%, #0284c7 100%);
   border: 3px solid #7dd3fc;
   color: #ffffff;
-  box-shadow: 0 0 28px rgba(14, 165, 233, 0.5);
+  box-shadow: 0 0 22px rgba(14, 165, 233, 0.55);
 }
 
 .smarters-transport-btn:hover,
 .smarters-transport-btn:focus {
   outline: none;
   border-color: #22d3ee;
-  background-color: rgba(14, 116, 144, 0.9);
-  transform: scale(1.08);
-  box-shadow: 0 0 24px rgba(34, 211, 238, 0.55);
+  background-color: rgba(14, 116, 144, 0.92);
+  transform: scale(1.07);
+  box-shadow: 0 0 22px rgba(34, 211, 238, 0.55);
 }
 
 .smarters-player-bottom {
-  padding: 36px 38px 28px 38px;
-  background: linear-gradient(0deg, rgba(4, 7, 14, 0.95) 0%, rgba(4, 7, 14, 0.65) 65%, rgba(4, 7, 14, 0) 100%);
+  padding: 46px 40px 26px 40px;
+  background: linear-gradient(0deg, rgba(4, 7, 14, 0.96) 0%, rgba(4, 7, 14, 0.78) 62%, rgba(4, 7, 14, 0) 100%);
   pointer-events: auto;
 }
 
 .smarters-seek-row {
   display: flex;
   align-items: center;
-  margin-bottom: 14px;
+  margin-bottom: 18px;
 }
 
 .smarters-time-text {
