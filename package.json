@@ -1,6 +1,6 @@
 {
   "name": "asyad-tv",
-  "version": "1.4.0",
+  "version": "1.4.1",
   "description": "Asyad TV (أسياد TV) - Fast OLED-friendly 10-foot IPTV, Kids Learning & Offline Arabic Azan web app for LG webOS 4.0",
   "private": true,
   "type": "module",
