@@ -492,7 +492,7 @@ export default function App() {
       : null;
 
   const activeNavObj = NAV_ITEMS.find(function (n) { return n.id === activeTab; });
-  const pageTitle = activeTab === 'home' ? 'Asyad TV v1.3.5' : (activeNavObj ? activeNavObj.label : 'Asyad TV');
+  const pageTitle = activeTab === 'home' ? 'Asyad TV v1.4.0' : (activeNavObj ? activeNavObj.label : 'Asyad TV');
 
   const sourceLabel = sourceConfig
     ? (sourceConfig.label || 'Playlist Active') + ' (' + catalog.items.length.toLocaleString() + ')'
@@ -502,18 +502,20 @@ export default function App() {
 
   return (
     <div className="tv-shell" style={{ flexDirection: 'column' }}>
-      <TopBar
-        title={pageTitle}
-        sourceLabel={sourceLabel}
-        isSourceLoaded={catalog.items.length > 0}
-        nextPrayerInfo={nextPrayerInfo}
-        kidsTimer={kidsTimer}
-        now={now}
-        showBackButton={activeTab !== 'home'}
-        onBackHome={function () { setActiveTab('home'); }}
-        onOpenAzan={function () { setActiveTab('azan'); }}
-        onOpenKids={function () { setActiveTab('kids'); }}
-      />
+      {!isCategoryWorkspace && (
+        <TopBar
+          title={pageTitle}
+          sourceLabel={sourceLabel}
+          isSourceLoaded={catalog.items.length > 0}
+          nextPrayerInfo={nextPrayerInfo}
+          kidsTimer={kidsTimer}
+          now={now}
+          showBackButton={activeTab !== 'home'}
+          onBackHome={function () { setActiveTab('home'); }}
+          onOpenAzan={function () { setActiveTab('azan'); }}
+          onOpenKids={function () { setActiveTab('kids'); }}
+        />
+      )}
 
       {isCategoryWorkspace ? (
         <div style={{ flex: 1, overflow: 'hidden' }}>
@@ -524,11 +526,15 @@ export default function App() {
             groups={(catalog.groups && catalog.groups[activeTab]) || []}
             favorites={favorites}
             continueWatching={watchProgress}
+            nextPrayerInfo={nextPrayerInfo}
+            kidsTimer={kidsTimer}
             onSelectItem={handleSelectItem}
             onResumeItem={handleResumeCardSelect}
             onRemoveContinueItem={handleRemoveContinueItem}
             onToggleFavorite={handleToggleFavorite}
             onBackHome={function () { setActiveTab('home'); }}
+            onOpenAzan={function () { setActiveTab('azan'); }}
+            onOpenKids={function () { setActiveTab('kids'); }}
           />
         </div>
       ) : (

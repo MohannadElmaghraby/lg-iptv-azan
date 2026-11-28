@@ -1083,3 +1083,491 @@ select {
 
 
 
+
+/* =====================================================================
+   IPTV Smarters Pro Workspace, Tall Poster Wall & Video Player OSD
+   (100% Chromium 53 / webOS 4.0 safe: no grid, no gap, no aspect-ratio)
+   ===================================================================== */
+.smarters-workspace {
+  display: flex;
+  width: 100%;
+  height: 100%;
+  background: linear-gradient(135deg, #060911 0%, #0a101d 55%, #070b14 100%);
+  overflow: hidden;
+}
+
+.smarters-sidebar {
+  width: 450px;
+  min-width: 450px;
+  height: 100%;
+  background-color: #05070c;
+  border-right: 1px solid rgba(255, 255, 255, 0.08);
+  display: flex;
+  flex-direction: column;
+  padding: 18px 0 16px 0;
+}
+
+.smarters-sidebar-header {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 20px 16px 20px;
+}
+
+.smarters-icon-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  min-width: 46px;
+  height: 46px;
+  padding: 0 12px;
+  border-radius: 10px;
+  border: 2px solid transparent;
+  background-color: rgba(255, 255, 255, 0.05);
+  color: #e2e8f0;
+  font-size: 22px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: background-color 0.14s ease, border-color 0.14s ease, transform 0.14s ease;
+}
+
+.smarters-icon-btn:hover,
+.smarters-icon-btn:focus {
+  outline: none;
+  background-color: rgba(14, 116, 144, 0.35);
+  border-color: #22d3ee;
+  color: #ffffff;
+  transform: scale(1.04);
+}
+
+.smarters-icon-btn.active {
+  background-color: #0e7490;
+  border-color: #22d3ee;
+  color: #ffffff;
+}
+
+.smarters-brand-center {
+  display: flex;
+  align-items: center;
+  font-size: 23px;
+  font-weight: 900;
+  color: #f8fafc;
+  letter-spacing: 0.4px;
+}
+
+.smarters-cat-search-wrap {
+  display: flex;
+  align-items: center;
+  margin: 0 18px 12px 18px;
+  padding: 0 14px;
+  height: 48px;
+  border-radius: 8px;
+  background-color: #161b26;
+  border: 2px solid rgba(255, 255, 255, 0.08);
+}
+
+.smarters-cat-search-wrap:focus-within {
+  border-color: #22d3ee;
+}
+
+.smarters-cat-search-input {
+  flex: 1;
+  min-width: 0;
+  background: transparent;
+  border: none;
+  color: #f8fafc;
+  font-size: 16px;
+  padding: 6px 8px;
+}
+
+.smarters-cat-search-input:focus {
+  outline: none;
+}
+
+.smarters-cat-list {
+  flex: 1;
+  overflow-y: auto;
+  padding-bottom: 16px;
+}
+
+.smarters-cat-row {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  width: 100%;
+  padding: 15px 22px;
+  background: transparent;
+  border: none;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.06);
+  color: #d8e1ee;
+  font-size: 17px;
+  font-weight: 700;
+  text-align: left;
+  cursor: pointer;
+  transition: background-color 0.12s ease, color 0.12s ease;
+}
+
+.smarters-cat-row:hover,
+.smarters-cat-row:focus {
+  outline: none;
+  background-color: rgba(14, 116, 144, 0.45);
+  color: #ffffff;
+  box-shadow: inset 4px 0 0 #22d3ee;
+}
+
+.smarters-cat-row.active {
+  background: linear-gradient(90deg, #0e7490 0%, #155e75 100%);
+  color: #ffffff;
+  box-shadow: inset 5px 0 0 #38bdf8;
+}
+
+.smarters-cat-label {
+  display: flex;
+  align-items: center;
+  min-width: 0;
+  flex: 1;
+  margin-right: 12px;
+}
+
+.smarters-cat-text {
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.smarters-cat-count {
+  font-size: 16px;
+  font-weight: 800;
+  color: #94a3b8;
+  flex-shrink: 0;
+}
+
+.smarters-cat-row.active .smarters-cat-count,
+.smarters-cat-row:focus .smarters-cat-count {
+  color: #ffffff;
+}
+
+/* Right Main Poster Wall */
+.smarters-main {
+  flex: 1;
+  min-width: 0;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  overflow: hidden;
+}
+
+.smarters-topbar {
+  height: 76px;
+  min-height: 76px;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 0 24px;
+  background: linear-gradient(180deg, rgba(8, 13, 24, 0.96) 0%, rgba(8, 13, 24, 0.78) 100%);
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.smarters-topbar-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 24px;
+  font-weight: 800;
+  color: #f8fafc;
+  letter-spacing: 0.6px;
+  max-width: 52%;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.smarters-toolbar-drawer {
+  padding: 12px 24px;
+  background-color: rgba(10, 15, 26, 0.96);
+  border-bottom: 1px solid rgba(34, 211, 238, 0.25);
+}
+
+.smarters-grid-scroll {
+  flex: 1;
+  overflow-y: auto;
+  padding: 18px 22px 34px 22px;
+}
+
+/* 5 tall vertical posters per row when sidebar is open, 6 when collapsed */
+.smarters-poster-grid {
+  display: flex;
+  flex-wrap: wrap;
+  margin-right: -16px;
+}
+
+.smarters-poster-wrap {
+  position: relative;
+  width: calc(20% - 16px);
+  margin-right: 16px;
+  margin-bottom: 18px;
+}
+
+.smarters-poster-grid.expanded .smarters-poster-wrap {
+  width: calc(16.6666% - 16px);
+}
+
+.smarters-poster-card {
+  position: relative;
+  display: block;
+  width: 100%;
+  height: 360px;
+  padding: 0;
+  border-radius: 10px;
+  border: 3px solid rgba(255, 255, 255, 0.08);
+  background-color: #111827;
+  overflow: hidden;
+  cursor: pointer;
+  text-align: center;
+  transition: transform 0.14s ease, border-color 0.14s ease, box-shadow 0.14s ease;
+}
+
+.smarters-poster-card:hover,
+.smarters-poster-card:focus {
+  outline: none;
+  border-color: #22d3ee;
+  box-shadow: 0 0 0 3px rgba(34, 211, 238, 0.28), 0 14px 28px rgba(0, 0, 0, 0.65);
+  transform: scale(1.03);
+  z-index: 4;
+}
+
+.smarters-poster-img {
+  width: 100%;
+  height: 100%;
+  object-fit: cover;
+  display: block;
+}
+
+.smarters-poster-fallback {
+  width: 100%;
+  height: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: linear-gradient(160deg, #131c31 0%, #090d16 100%);
+  padding-bottom: 48px;
+}
+
+.smarters-rating-pill {
+  position: absolute;
+  top: 10px;
+  left: 10px;
+  padding: 3px 9px;
+  border-radius: 6px;
+  background-color: #0ea5e9;
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 900;
+  box-shadow: 0 2px 8px rgba(0, 0, 0, 0.5);
+  z-index: 3;
+}
+
+.smarters-poster-caption {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  padding: 34px 10px 12px 10px;
+  background: linear-gradient(180deg, rgba(5, 7, 12, 0) 0%, rgba(5, 7, 12, 0.84) 48%, rgba(5, 7, 12, 0.96) 100%);
+  z-index: 2;
+}
+
+.smarters-poster-title {
+  font-size: 17px;
+  font-weight: 800;
+  color: #ffffff;
+  line-height: 1.25;
+  max-height: 44px;
+  overflow: hidden;
+  text-shadow: 0 2px 6px rgba(0, 0, 0, 0.9);
+}
+
+.smarters-poster-sub {
+  font-size: 13px;
+  font-weight: 700;
+  color: #38bdf8;
+  margin-top: 4px;
+}
+
+.smarters-poster-progress {
+  position: absolute;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  height: 5px;
+  background-color: rgba(255, 255, 255, 0.2);
+  z-index: 4;
+}
+
+.smarters-poster-progress-fill {
+  height: 100%;
+  background: linear-gradient(90deg, #06b6d4 0%, #38bdf8 100%);
+}
+
+/* =====================================================================
+   IPTV Smarters Pro Video Player OSD
+   ===================================================================== */
+.smarters-player-osd {
+  position: absolute;
+  top: 0;
+  left: 0;
+  right: 0;
+  bottom: 0;
+  display: flex;
+  flex-direction: column;
+  justify-content: space-between;
+  z-index: 15;
+  pointer-events: none;
+}
+
+.smarters-player-top {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  padding: 26px 38px 42px 38px;
+  background: linear-gradient(180deg, rgba(4, 7, 14, 0.92) 0%, rgba(4, 7, 14, 0.55) 65%, rgba(4, 7, 14, 0) 100%);
+  pointer-events: auto;
+}
+
+.smarters-player-center {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: none;
+}
+
+.smarters-transport-group {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  pointer-events: auto;
+}
+
+.smarters-transport-btn {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  height: 68px;
+  min-width: 112px;
+  padding: 0 22px;
+  margin: 0 14px;
+  border-radius: 999px;
+  border: 2px solid rgba(255, 255, 255, 0.22);
+  background-color: rgba(8, 13, 24, 0.78);
+  color: #f8fafc;
+  font-size: 20px;
+  font-weight: 800;
+  cursor: pointer;
+  transition: transform 0.14s ease, border-color 0.14s ease, background-color 0.14s ease;
+}
+
+.smarters-transport-btn.play-main {
+  width: 92px;
+  min-width: 92px;
+  height: 92px;
+  padding: 0;
+  font-size: 34px;
+  background: linear-gradient(145deg, #0ea5e9 0%, #0284c7 100%);
+  border: 3px solid #7dd3fc;
+  color: #ffffff;
+  box-shadow: 0 0 28px rgba(14, 165, 233, 0.5);
+}
+
+.smarters-transport-btn:hover,
+.smarters-transport-btn:focus {
+  outline: none;
+  border-color: #22d3ee;
+  background-color: rgba(14, 116, 144, 0.9);
+  transform: scale(1.08);
+  box-shadow: 0 0 24px rgba(34, 211, 238, 0.55);
+}
+
+.smarters-player-bottom {
+  padding: 36px 38px 28px 38px;
+  background: linear-gradient(0deg, rgba(4, 7, 14, 0.95) 0%, rgba(4, 7, 14, 0.65) 65%, rgba(4, 7, 14, 0) 100%);
+  pointer-events: auto;
+}
+
+.smarters-seek-row {
+  display: flex;
+  align-items: center;
+  margin-bottom: 14px;
+}
+
+.smarters-time-text {
+  font-size: 18px;
+  font-weight: 800;
+  color: #e2e8f0;
+  min-width: 78px;
+  font-variant-numeric: tabular-nums;
+}
+
+.smarters-seek-bar {
+  position: relative;
+  flex: 1;
+  height: 10px;
+  margin: 0 18px;
+  border-radius: 999px;
+  background-color: rgba(255, 255, 255, 0.22);
+  cursor: pointer;
+}
+
+.smarters-seek-fill {
+  position: relative;
+  height: 100%;
+  border-radius: 999px;
+  background: linear-gradient(90deg, #06b6d4 0%, #38bdf8 100%);
+}
+
+.smarters-seek-thumb {
+  position: absolute;
+  right: -9px;
+  top: -5px;
+  width: 20px;
+  height: 20px;
+  border-radius: 50%;
+  background-color: #ffffff;
+  border: 3px solid #22d3ee;
+  box-shadow: 0 0 12px rgba(34, 211, 238, 0.9);
+}
+
+.smarters-osd-pill {
+  display: inline-flex;
+  align-items: center;
+  justify-content: center;
+  padding: 9px 16px;
+  margin-left: 10px;
+  border-radius: 10px;
+  border: 2px solid rgba(255, 255, 255, 0.16);
+  background-color: rgba(12, 18, 30, 0.78);
+  color: #f1f5f9;
+  font-size: 15px;
+  font-weight: 700;
+  cursor: pointer;
+  transition: border-color 0.14s ease, background-color 0.14s ease, transform 0.14s ease;
+}
+
+.smarters-osd-pill:hover,
+.smarters-osd-pill:focus {
+  outline: none;
+  border-color: #22d3ee;
+  background-color: rgba(14, 116, 144, 0.85);
+  color: #ffffff;
+  transform: scale(1.04);
+}
+
+.smarters-osd-pill.active {
+  border-color: #22d3ee;
+  background-color: rgba(14, 116, 144, 0.65);
+  color: #ffffff;
+}
+
+.smarters-osd-pill.danger {
+  border-color: rgba(239, 68, 68, 0.45);
+  background-color: rgba(127, 29, 29, 0.65);
+}

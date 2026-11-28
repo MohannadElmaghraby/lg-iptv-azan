@@ -760,6 +760,20 @@ export default function VideoPlayer({
     onClose,
   ]);
 
+  const handleSeekBarClick = function (e) {
+    e.stopPropagation();
+    const video = videoRef.current;
+    if (!video || !isFinite(video.duration) || video.duration <= 0) return;
+    const rect = e.currentTarget.getBoundingClientRect();
+    if (!rect || rect.width <= 0) return;
+    const ratio = Math.max(0, Math.min(1, (e.clientX - rect.left) / rect.width));
+    const next = ratio * video.duration;
+    video.currentTime = next;
+    setCurrentTime(next);
+    showHudToast('Seek: ' + formatPlaybackTime(next));
+    showOsd(false);
+  };
+
   const handleStageClick = function (e) {
     let el = e && e.target;
     while (el && el !== e.currentTarget) {
@@ -767,6 +781,7 @@ export default function VideoPlayer({
       const cls = typeof el.className === 'string' ? el.className : '';
       if (
         tag === 'BUTTON' ||
+        cls.indexOf('smarters-seek-bar') !== -1 ||
         cls.indexOf('player-progress-bar') !== -1 ||
         cls.indexOf('player-drawer') !== -1
       ) {
@@ -818,16 +833,16 @@ export default function VideoPlayer({
             transform: 'translate(-50%, -50%)',
             padding: '14px 28px',
             borderRadius: 999,
-            backgroundColor: 'rgba(5, 6, 8, 0.85)',
-            border: '2px solid rgba(240, 201, 77, 0.5)',
+            backgroundColor: 'rgba(5, 8, 16, 0.88)',
+            border: '2px solid rgba(34, 211, 238, 0.6)',
             fontSize: 20,
             fontWeight: 700,
-            color: '#f0c94d',
+            color: '#38bdf8',
             zIndex: 14,
             pointerEvents: 'none',
           }}
         >
-          <AppIcon name="timer" size={20} color="#f0c94d" style={{ marginRight: 8 }} />
+          <AppIcon name="timer" size={20} color="#38bdf8" style={{ marginRight: 8 }} />
           Buffering Stream...
         </div>
       )}
@@ -837,16 +852,16 @@ export default function VideoPlayer({
         <div
           style={{
             position: 'absolute',
-            top: '18%',
+            top: '16%',
             left: '50%',
             transform: 'translateX(-50%)',
             padding: '12px 28px',
             borderRadius: 999,
-            backgroundColor: 'rgba(5, 6, 8, 0.9)',
-            border: '2px solid #f0c94d',
+            backgroundColor: 'rgba(5, 8, 16, 0.92)',
+            border: '2px solid #22d3ee',
             fontSize: 24,
             fontWeight: 800,
-            color: '#f5f7fa',
+            color: '#f8fafc',
             zIndex: 24,
             pointerEvents: 'none',
           }}
@@ -887,85 +902,146 @@ export default function VideoPlayer({
         </div>
       )}
 
-      {/* Auto-Hiding TV OSD */}
+      {/* IPTV Smarters Pro Auto-Hiding TV Player OSD */}
       {osdVisible && (
-        <div className="player-osd">
-          {/* Top OSD Header */}
-          <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'flex-start' }}>
-            <div>
-              <div style={{ display: 'flex', alignItems: 'center', marginBottom: 6 }}>
-                <span
-                  style={{
-                    padding: '4px 10px',
-                    borderRadius: 6,
-                    fontSize: 13,
-                    fontWeight: 800,
-                    backgroundColor: item.type === 'live' ? '#ef4444' : '#d4af37',
-                    color: item.type === 'live' ? '#fff' : '#050608',
-                    marginRight: 12,
-                  }}
-                >
-                  {item.type === 'live' ? 'LIVE' : item.type === 'movies' ? 'MOVIE' : 'SERIES'}
-                </span>
-                <h2 style={{ fontSize: 30, margin: 0 }} dir="auto">
-                  {item.title}
-                </h2>
-              </div>
-              <div style={{ fontSize: 16, color: '#cbd5e1' }} dir="auto">
-                {item.group || 'Stream'} {usingNativeFallback ? '• Native Video Mode' : '• HLS Fast Cache'} • {aspectMode.label}
-              </div>
-              {epgList.length > 0 && (
-                <div style={{ marginTop: 8, fontSize: 15, color: '#f0c94d' }} dir="auto">
-                  Now: {epgList[0].title}
-                  {epgList[1] ? '  |  Next: ' + epgList[1].title : ''}
+        <div className="player-osd smarters-player-osd">
+          {/* Top Gradient Bar: Back + Title on Left | Aspect Ratio, CC, Audio, Quality, Star on Right */}
+          <div className="smarters-player-top" onClick={function (e) { e.stopPropagation(); }}>
+            <div style={{ display: 'flex', alignItems: 'center', minWidth: 0, flex: 1, marginRight: 20 }}>
+              <button
+                type="button"
+                data-focusable="true"
+                className="smarters-icon-btn"
+                style={{ marginRight: 16 }}
+                onClick={function (e) { e.stopPropagation(); onClose(); }}
+                title="Exit Video"
+                aria-label="Exit Video"
+              >
+                ←
+              </button>
+              <div style={{ minWidth: 0 }}>
+                <div style={{ display: 'flex', alignItems: 'center', marginBottom: 4 }}>
+                  <span
+                    style={{
+                      padding: '3px 10px',
+                      borderRadius: 6,
+                      fontSize: 13,
+                      fontWeight: 900,
+                      backgroundColor: item.type === 'live' ? '#ef4444' : '#0ea5e9',
+                      color: '#ffffff',
+                      marginRight: 12,
+                      flexShrink: 0,
+                    }}
+                  >
+                    {item.type === 'live' ? '● LIVE' : item.type === 'movies' ? 'MOVIE' : 'SERIES'}
+                  </span>
+                  <h2
+                    style={{
+                      fontSize: 28,
+                      fontWeight: 800,
+                      margin: 0,
+                      color: '#ffffff',
+                      overflow: 'hidden',
+                      textOverflow: 'ellipsis',
+                      whiteSpace: 'nowrap',
+                    }}
+                    dir="auto"
+                  >
+                    {item.title}
+                  </h2>
                 </div>
-              )}
+                <div style={{ fontSize: 15, color: '#cbd5e1' }} dir="auto">
+                  {item.group || 'Stream'} • {usingNativeFallback ? 'Native Player' : 'HLS Fast Cache'}
+                  {epgList.length > 0 ? ' • Now: ' + epgList[0].title : ''}
+                </div>
+              </div>
             </div>
 
-            <div className="btn-row">
+            <div style={{ display: 'flex', alignItems: 'center', flexShrink: 0 }}>
+              <button
+                type="button"
+                data-focusable="true"
+                className={'smarters-osd-pill' + (aspectIdx !== 0 ? ' active' : '')}
+                onClick={cycleAspectRatio}
+              >
+                Aspect: {aspectMode.label}
+              </button>
+
+              <button
+                type="button"
+                data-focusable="true"
+                className={'smarters-osd-pill' + (selectedSubtitle !== -1 ? ' active' : '')}
+                onClick={function () {
+                  if (subtitleTracks.length > 0 && openDrawer !== 'subtitles') {
+                    setOpenDrawer('subtitles');
+                  } else if (subtitleTracks.length > 0) {
+                    cycleSubtitles();
+                  } else {
+                    setOpenDrawer(openDrawer === 'subtitles' ? null : 'subtitles');
+                  }
+                }}
+              >
+                CC: {selectedSubtitle === -1 ? 'Off' : (subtitleTracks[selectedSubtitle] ? subtitleTracks[selectedSubtitle].label : 'On')}
+              </button>
+
+              <button
+                type="button"
+                data-focusable="true"
+                className="smarters-osd-pill"
+                onClick={function () { setOpenDrawer(openDrawer === 'audio' ? null : 'audio'); }}
+              >
+                Audio ({audioTracks.length || 1})
+              </button>
+
+              {qualities.length > 0 && (
+                <button
+                  type="button"
+                  data-focusable="true"
+                  className="smarters-osd-pill"
+                  onClick={function () { setOpenDrawer(openDrawer === 'quality' ? null : 'quality'); }}
+                >
+                  {selectedQuality === -1 ? 'Auto HD' : (qualities[selectedQuality] ? qualities[selectedQuality].label : 'Auto')}
+                </button>
+              )}
+
+              <button
+                type="button"
+                data-focusable="true"
+                className={'smarters-osd-pill' + (isFavorite ? ' active' : '')}
+                onClick={function () { onToggleFavorite(item); }}
+              >
+                {isFavorite ? '★' : '☆'}
+              </button>
+
               {onTriggerTestAzan && (
                 <button
                   type="button"
                   data-focusable="true"
-                  className="tv-btn small"
-                  onClick={function (e) { e.stopPropagation(); onTriggerTestAzan(); }}
+                  className="smarters-osd-pill"
+                  onClick={function () { onTriggerTestAzan(); }}
+                  title="Test Azan Auto-Pause"
                 >
-                  <AppIcon name="azan" size={16} style={{ marginRight: 6 }} />
-                  Test Azan
+                  <AppIcon name="azan" size={16} color="#f0c94d" />
                 </button>
               )}
-              <button
-                type="button"
-                data-focusable="true"
-                className="tv-btn small"
-                onClick={function (e) { e.stopPropagation(); onToggleFavorite(item); }}
-              >
-                {isFavorite ? '★ Starred' : '☆ Star'}
-              </button>
-              <button
-                type="button"
-                data-focusable="true"
-                className="tv-btn small danger"
-                onClick={function (e) { e.stopPropagation(); onClose(); }}
-              >
-                ✕ Close
-              </button>
             </div>
           </div>
 
           {/* Track Selection Drawers */}
           {openDrawer && (
             <div
-              className="panel"
+              className="panel player-drawer"
               style={{
                 alignSelf: 'flex-end',
-                width: 420,
-                backgroundColor: 'rgba(11, 14, 20, 0.96)',
-                marginBottom: 14,
+                marginRight: 38,
+                width: 430,
+                backgroundColor: 'rgba(8, 13, 24, 0.96)',
+                border: '2px solid rgba(34, 211, 238, 0.45)',
+                pointerEvents: 'auto',
               }}
               onClick={function (e) { e.stopPropagation(); }}
             >
-              <div style={{ fontSize: 18, fontWeight: 700, marginBottom: 12 }}>
+              <div style={{ fontSize: 18, fontWeight: 800, color: '#38bdf8', marginBottom: 12 }}>
                 {openDrawer === 'subtitles'
                   ? 'Subtitles / Captions (CC)'
                   : openDrawer === 'quality'
@@ -1055,37 +1131,23 @@ export default function VideoPlayer({
             </div>
           )}
 
-          {/* Bottom OSD Transport & Options */}
-          <div onClick={function (e) { e.stopPropagation(); }}>
-            {item.type !== 'live' && (
-              <div style={{ marginBottom: 14 }}>
-                <div style={{ display: 'flex', justifyContent: 'space-between', fontSize: 15, color: '#cbd5e1', marginBottom: 6 }}>
-                  <span>{formatPlaybackTime(currentTime)} (Hold -10s / +10s to seek faster)</span>
-                  <span>{duration > 0 ? formatPlaybackTime(duration) : '--:--'}</span>
-                </div>
-                <div className="progress-track" style={{ height: 8 }}>
-                  <div className="progress-fill" style={{ width: progressPct + '%' }} />
-                </div>
-              </div>
-            )}
-
-            <div className="btn-row" style={{ justifyContent: 'space-between' }}>
-              <div className="btn-row">
-                {item.type === 'live' && liveChannels && liveChannels.length > 1 && (
-                  <button
-                    type="button"
-                    data-focusable="true"
-                    className="tv-btn small"
-                    onClick={function () { zapChannel(-1); }}
-                  >
-                    ▲ CH Prev
-                  </button>
-                )}
-
+          {/* Center Floating Smarters Pro Circular Transport Controls (-10s | Play/Pause | +10s) */}
+          <div className="smarters-player-center">
+            <div className="smarters-transport-group" onClick={function (e) { e.stopPropagation(); }}>
+              {item.type === 'live' && liveChannels && liveChannels.length > 1 ? (
                 <button
                   type="button"
                   data-focusable="true"
-                  className="tv-btn small"
+                  className="smarters-transport-btn"
+                  onClick={function () { zapChannel(-1); }}
+                >
+                  ◀ Prev CH
+                </button>
+              ) : (
+                <button
+                  type="button"
+                  data-focusable="true"
+                  className="smarters-transport-btn"
                   onMouseDown={function () {
                     didMouseDownRef.current = true;
                     startHoldSeek(-1);
@@ -1111,23 +1173,48 @@ export default function VideoPlayer({
                     }
                   }}
                 >
-                  ⏪ -10s
+                  <svg width="20" height="20" viewBox="0 0 24 24" style={{ marginRight: 6, verticalAlign: 'middle' }} aria-hidden="true">
+                    <polygon points="11,5 2,12 11,19" fill="currentColor" />
+                    <polygon points="22,5 13,12 22,19" fill="currentColor" />
+                  </svg>
+                  -10s
                 </button>
+              )}
 
+              <button
+                ref={playPauseBtnRef}
+                type="button"
+                data-focusable="true"
+                className="smarters-transport-btn play-main"
+                onClick={togglePlayPause}
+                aria-label={isPlaying ? 'Pause' : 'Play'}
+              >
+                {isPlaying ? (
+                  <svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true">
+                    <rect x="5" y="4" width="5" height="16" rx="1.5" fill="#ffffff" />
+                    <rect x="14" y="4" width="5" height="16" rx="1.5" fill="#ffffff" />
+                  </svg>
+                ) : (
+                  <svg width="34" height="34" viewBox="0 0 24 24" aria-hidden="true">
+                    <polygon points="6,4 20,12 6,20" fill="#ffffff" />
+                  </svg>
+                )}
+              </button>
+
+              {item.type === 'live' && liveChannels && liveChannels.length > 1 ? (
                 <button
-                  ref={playPauseBtnRef}
                   type="button"
                   data-focusable="true"
-                  className="tv-btn primary small"
-                  onClick={togglePlayPause}
+                  className="smarters-transport-btn"
+                  onClick={function () { zapChannel(1); }}
                 >
-                  {isPlaying ? '⏸ Pause' : '▶ Play'}
+                  Next CH ▶
                 </button>
-
+              ) : (
                 <button
                   type="button"
                   data-focusable="true"
-                  className="tv-btn small"
+                  className="smarters-transport-btn"
                   onMouseDown={function () {
                     didMouseDownRef.current = true;
                     startHoldSeek(1);
@@ -1153,78 +1240,67 @@ export default function VideoPlayer({
                     }
                   }}
                 >
-                  +10s ⏩
+                  +10s
+                  <svg width="20" height="20" viewBox="0 0 24 24" style={{ marginLeft: 6, verticalAlign: 'middle' }} aria-hidden="true">
+                    <polygon points="2,5 11,12 2,19" fill="currentColor" />
+                    <polygon points="13,5 22,12 13,19" fill="currentColor" />
+                  </svg>
                 </button>
+              )}
+            </div>
+          </div>
 
+          {/* Bottom Slim Smarters Pro Cyan Seek Bar & Quick Actions */}
+          <div className="smarters-player-bottom" onClick={function (e) { e.stopPropagation(); }}>
+            {item.type !== 'live' ? (
+              <div className="smarters-seek-row">
+                <span className="smarters-time-text">{formatPlaybackTime(currentTime)}</span>
+                <div className="smarters-seek-bar" onClick={handleSeekBarClick}>
+                  <div className="smarters-seek-fill" style={{ width: progressPct + '%' }}>
+                    <div className="smarters-seek-thumb" />
+                  </div>
+                </div>
+                <span className="smarters-time-text" style={{ textAlign: 'right' }}>
+                  {duration > 0 ? formatPlaybackTime(duration) : '--:--'}
+                </span>
+              </div>
+            ) : (
+              <div className="smarters-seek-row">
+                <span style={{ fontSize: 16, fontWeight: 800, color: '#ef4444', marginRight: 16 }}>
+                  ● LIVE STREAM
+                </span>
+                <span style={{ fontSize: 16, color: '#cbd5e1' }} dir="auto">
+                  {epgList.length > 0
+                    ? 'Now: ' + epgList[0].title + (epgList[1] ? '   |   Next: ' + epgList[1].title : '')
+                    : 'Use CH ▲/▼ or Up/Down arrows to switch channels'}
+                </span>
+              </div>
+            )}
+
+            <div style={{ display: 'flex', alignItems: 'center', justifyContent: 'space-between' }}>
+              <div style={{ fontSize: 14, color: '#94a3b8' }}>
+                OK: Pause/Play • ◀ / ▶: ±10s (Hold: Fast) • ▲/▼: Controls • Back: Hide / Exit
+              </div>
+
+              <div style={{ display: 'flex', alignItems: 'center' }}>
                 {item.type !== 'live' && currentTime > 5 && (
                   <button
                     type="button"
                     data-focusable="true"
-                    className="tv-btn small"
+                    className="smarters-osd-pill"
                     onClick={handleStartOver}
                   >
                     ↺ Start Over
                   </button>
                 )}
-
-                {item.type === 'live' && liveChannels && liveChannels.length > 1 && (
-                  <button
-                    type="button"
-                    data-focusable="true"
-                    className="tv-btn small"
-                    onClick={function () { zapChannel(1); }}
-                  >
-                    ▼ CH Next
-                  </button>
-                )}
-              </div>
-
-              <div className="btn-row">
                 <button
                   type="button"
                   data-focusable="true"
-                  className="tv-btn small"
-                  onClick={cycleAspectRatio}
+                  className="smarters-osd-pill danger"
+                  onClick={onClose}
                 >
-                  Aspect: {aspectMode.label}
+                  ✕ Close
                 </button>
-
-                <button
-                  type="button"
-                  data-focusable="true"
-                  className={'tv-btn small' + (selectedSubtitle !== -1 ? ' emerald' : '')}
-                  onClick={function () {
-                    if (subtitleTracks.length > 0 && openDrawer !== 'subtitles') {
-                      setOpenDrawer('subtitles');
-                    } else if (subtitleTracks.length > 0) {
-                      cycleSubtitles();
-                    } else {
-                      setOpenDrawer(openDrawer === 'subtitles' ? null : 'subtitles');
-                    }
-                  }}
-                >
-                  CC: {selectedSubtitle === -1 ? 'Off' : (subtitleTracks[selectedSubtitle] ? subtitleTracks[selectedSubtitle].label : 'On')}
-                </button>
-
-                <button
-                  type="button"
-                  data-focusable="true"
-                  className="tv-btn small"
-                  onClick={function () { setOpenDrawer(openDrawer === 'audio' ? null : 'audio'); }}
-                >
-                  Audio ({audioTracks.length || 1})
-                </button>
-
-                {qualities.length > 0 && (
-                  <button
-                    type="button"
-                    data-focusable="true"
-                    className="tv-btn small"
-                    onClick={function () { setOpenDrawer(openDrawer === 'quality' ? null : 'quality'); }}
-                  >
-                    Quality: {selectedQuality === -1 ? 'Auto' : (qualities[selectedQuality] ? qualities[selectedQuality].label : 'Auto')}
-                  </button>
-                )}
               </div>
             </div>
           </div>
