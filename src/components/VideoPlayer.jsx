@@ -9,9 +9,9 @@ import LoadingSpinner from './LoadingSpinner.jsx';
 const ASPECT_MODES = [
   { id: 'fit', label: 'Fit (Original)', style: { width: '100%', height: '100%', objectFit: 'contain' } },
   { id: '16_9', label: '16:9 Fill', style: { width: '100%', height: '100%', objectFit: 'fill' } },
-  { id: '4_3', label: '4:3 Classic', style: { width: '75%', height: '100%', objectFit: 'fill' } },
+  { id: '4_3', label: '4:3 Classic', style: { width: '100%', height: '100%', objectFit: 'fill', transform: 'scaleX(0.75)' } },
   { id: 'zoom', label: 'Zoom (Crop)', style: { width: '100%', height: '100%', objectFit: 'cover', transform: 'scale(1.18)' } },
-  { id: 'cinema', label: 'Cinema 21:9', style: { width: '100%', height: '74%', objectFit: 'fill' } },
+  { id: 'cinema', label: 'Cinema 21:9', style: { width: '100%', height: '100%', objectFit: 'fill', transform: 'scaleY(0.74)' } },
 ];
 
 export default function VideoPlayer({

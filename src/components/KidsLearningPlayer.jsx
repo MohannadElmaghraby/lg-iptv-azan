@@ -3,6 +3,7 @@ import { WEBOS_KEYS } from '../utils/spatialNav.js';
 import { stopKidsVoice } from '../utils/kidsGreeting.js';
 import KidsIllustration, { mapVisualToKind } from './KidsIllustration.jsx';
 import AppIcon from './AppIcon.jsx';
+import WebOSKeepAwake from './WebOSKeepAwake.jsx';
 
 function renderShapeSvg(shape, colorHex) {
   const fill = colorHex || '#38bdf8';
@@ -301,6 +302,8 @@ export default function KidsLearningPlayer({
       data-modal-scope="kids-player"
       style={{ backgroundColor: '#05080f', padding: '24px 42px', justifyContent: 'space-between' }}
     >
+      <WebOSKeepAwake active={isPlaying && !externalPauseReason} />
+
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center' }}>
         <div>
           <div style={{ fontSize: 16, color: accent, fontWeight: 800 }}>

@@ -3,6 +3,9 @@ import { WEBOS_KEYS } from '../utils/spatialNav.js';
 import { stopKidsVoice } from '../utils/kidsGreeting.js';
 import KidsIllustration from './KidsIllustration.jsx';
 import AppIcon from './AppIcon.jsx';
+import WebOSKeepAwake from './WebOSKeepAwake.jsx';
+
+const KIDS_GAME_IDLE_SLEEP_MS = 5 * 60 * 1000;
 
 const PLAYERS = [
   { id: 'asser', label: 'Asser (آسر)' },
@@ -139,6 +142,8 @@ export default function KidsGamePlayer({
       data-modal-scope="kids-game"
       style={{ backgroundColor: '#05080f', padding: '24px 42px', justifyContent: 'space-between' }}
     >
+      <WebOSKeepAwake active={!externalPauseReason} idleTimeoutMs={KIDS_GAME_IDLE_SLEEP_MS} />
+
       {/* Top Bar */}
       <div style={{ display: 'flex', justifyContent: 'space-between', alignItems: 'center', flexWrap: 'wrap' }}>
         <div>

@@ -50,5 +50,11 @@ describe('Kids Lessons, Step Counting & Games Asset Integrity', () => {
       const p = path.join(PUBLIC_DIR, 'audio', 'kids', f);
       expect(fs.existsSync(p), 'Missing clip: ' + p).toBe(true);
     }
+
+    const keepAwakePath = path.join(PUBLIC_DIR, 'video', 'keepawake.mp4');
+    expect(fs.existsSync(keepAwakePath), 'Missing webOS keepawake.mp4').toBe(true);
+    const stat = fs.statSync(keepAwakePath);
+    expect(stat.size).toBeGreaterThan(500);
+    expect(stat.size).toBeLessThan(50000);
   });
 });
